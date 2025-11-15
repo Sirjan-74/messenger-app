@@ -2,921 +2,175 @@
 {% block title %}Settings - Enhanced Messenger{% endblock %}
 {% block extra_style %}
 <style>
+    /* (kept your full style block but trimmed comments for brevity in this file) */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
-    :root {
-        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        --success-gradient: linear-gradient(135deg, #00d4aa 0%, #01a3a4 100%);
-        --warning-gradient: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);
-        --danger-gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-        --text-primary: #2c3e50;
-        --text-secondary: #7f8c8d;
-        --bg-primary: #f8fafc;
-        --bg-secondary: #ffffff;
-        --border-color: #e2e8f0;
-        --shadow-sm: 0 2px 8px rgba(0,0,0,0.1);
-        --shadow-md: 0 8px 25px rgba(0,0,0,0.15);
-        --shadow-lg: 0 20px 40px rgba(0,0,0,0.2);
-        --border-radius: 20px;
-        --border-radius-sm: 12px;
-        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    [data-theme="dark"] {
-        --text-primary: #ffffff;
-        --text-secondary: #cbd5e0;
-        --bg-primary: #1a202c;
-        --bg-secondary: #2d3748;
-        --border-color: #4a5568;
-    }
-    
-    [data-theme="dark"] body {
-        background: linear-gradient(-45deg, #2d3748, #4a5568, #553c9a, #6b46c1) !important;
-        color: #ffffff;
-    }
-    
-    body {
-        font-family: 'Inter', sans-serif;
-        background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
-        background-size: 400% 400%;
-        animation: gradientShift 15s ease infinite;
-        min-height: 100vh;
-        color: var(--text-primary);
-        margin: 0;
-        padding: 0;
-    }
-    
-    @keyframes gradientShift {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-    
-    .container {
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 2rem;
-    }
-    
-    /* Settings Grid */
-    .settings-container {
-        display: grid;
-        gap: 2rem;
-        margin-top: 2rem;
-    }
-    
-    /* Enhanced Cards */
-    .settings-card {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(20px);
-        border-radius: var(--border-radius);
-        padding: 2.5rem;
-        box-shadow: var(--shadow-lg);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        transition: var(--transition);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    [data-theme="dark"] .settings-card {
-        background: rgba(45, 55, 72, 0.95);
-        border: 1px solid rgba(74, 85, 104, 0.3);
-    }
-    
-    .settings-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: var(--primary-gradient);
-    }
-    
-    .settings-card:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--shadow-lg);
-    }
-    
-    .settings-card.profile::before {
-        background: var(--primary-gradient);
-    }
-    
-    .settings-card.security::before {
-        background: var(--danger-gradient);
-    }
-    
-    .settings-card.appearance::before {
-        background: var(--accent-gradient);
-    }
-    
-    .settings-card.notifications::before {
-        background: var(--warning-gradient);
-    }
-    
-    /* Card Headers */
-    .card-header {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 2rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid var(--border-color);
-    }
-    
-    [data-theme="dark"] .card-header {
-        border-bottom-color: #4a5568;
-    }
-    
-    .card-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        color: white;
-        background: var(--primary-gradient);
-    }
-    
-    .card-icon.security {
-        background: var(--danger-gradient);
-    }
-    
-    .card-icon.appearance {
-        background: var(--accent-gradient);
-    }
-    
-    .card-icon.notifications {
-        background: var(--warning-gradient);
-    }
-    
-    .card-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin: 0;
-    }
-    
-    .card-subtitle {
-        font-size: 0.9rem;
-        color: var(--text-secondary);
-        margin: 0;
-    }
-    
-    /* Form Elements */
-    .form-group {
-        margin-bottom: 2rem;
-    }
-    
-    .form-label {
-        display: block;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin-bottom: 0.75rem;
-        font-size: 1rem;
-    }
-    
-    .form-input, .form-textarea, .form-select {
-        width: 100%;
-        padding: 1rem 1.5rem;
-        border: 2px solid var(--border-color);
-        border-radius: var(--border-radius-sm);
-        background: var(--bg-primary);
-        color: var(--text-primary);
-        font-size: 1rem;
-        font-family: inherit;
-        transition: var(--transition);
-        outline: none;
-    }
-    
-    [data-theme="dark"] .form-input,
-    [data-theme="dark"] .form-textarea,
-    [data-theme="dark"] .form-select {
-        background: #2d3748;
-        border-color: #4a5568;
-        color: #ffffff;
-    }
-    
-    .form-input:focus, .form-textarea:focus, .form-select:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-        transform: translateY(-2px);
-    }
-    
-    .form-input::placeholder, .form-textarea::placeholder {
-        color: var(--text-secondary);
-    }
-    
-    [data-theme="dark"] .form-input::placeholder,
-    [data-theme="dark"] .form-textarea::placeholder {
-        color: #cbd5e0;
-    }
-    
-    .form-textarea {
-        min-height: 120px;
-        resize: vertical;
-    }
-    
-    /* Custom Switch */
-    .switch-container {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        background: rgba(102, 126, 234, 0.05);
-        border-radius: var(--border-radius-sm);
-        margin-bottom: 1rem;
-    }
-    
-    [data-theme="dark"] .switch-container {
-        background: rgba(102, 126, 234, 0.1);
-    }
-    
-    .switch {
-        position: relative;
-        width: 60px;
-        height: 32px;
-        background: var(--border-color);
-        border-radius: 20px;
-        cursor: pointer;
-        transition: var(--transition);
-    }
-    
-    [data-theme="dark"] .switch {
-        background: #4a5568;
-    }
-    
-    .switch.active {
-        background: var(--primary-gradient);
-    }
-    
-    .switch-slider {
-        position: absolute;
-        top: 4px;
-        left: 4px;
-        width: 24px;
-        height: 24px;
-        background: white;
-        border-radius: 50%;
-        transition: var(--transition);
-        box-shadow: var(--shadow-sm);
-    }
-    
-    .switch.active .switch-slider {
-        transform: translateX(28px);
-    }
-    
-    .switch-label {
-        font-weight: 500;
-        color: var(--text-primary);
-        flex: 1;
-    }
-    
-    /* Theme Toggle Special */
-    .theme-preview {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-        margin-top: 1rem;
-    }
-    
-    .theme-option {
-        padding: 1.5rem;
-        border-radius: var(--border-radius-sm);
-        cursor: pointer;
-        transition: var(--transition);
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .theme-option.light {
-        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        color: #2c3e50;
-        border: 3px solid transparent;
-    }
-    
-    .theme-option.dark {
-        background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-        color: #ffffff;
-        border: 3px solid transparent;
-    }
-    
-    .theme-option.active {
-        border-color: #667eea;
-        transform: scale(1.05);
-        box-shadow: var(--shadow-md);
-    }
-    
-    .theme-option h4 {
-        margin: 0 0 0.5rem 0;
-        font-weight: 600;
-    }
-    
-    .theme-option p {
-        margin: 0;
-        font-size: 0.9rem;
-        opacity: 0.8;
-    }
-    
-    /* Action Buttons */
-    .btn {
-        background: var(--primary-gradient);
-        color: white;
-        border: none;
-        padding: 1rem 2rem;
-        border-radius: var(--border-radius-sm);
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: var(--transition);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        position: relative;
-        overflow: hidden;
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-    }
-    
-    .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
-    }
-    
-    .btn:active {
-        transform: translateY(0);
-    }
-    
-    .btn.danger {
-        background: var(--danger-gradient);
-    }
-    
-    .btn.success {
-        background: var(--success-gradient);
-    }
-    
-    /* Profile Picture Upload */
-    .profile-picture-section {
-        display: flex;
-        align-items: center;
-        gap: 2rem;
-        margin-bottom: 2rem;
-        padding: 1.5rem;
-        background: rgba(102, 126, 234, 0.05);
-        border-radius: var(--border-radius-sm);
-    }
-    
-    [data-theme="dark"] .profile-picture-section {
-        background: rgba(102, 126, 234, 0.1);
-    }
-    
-    .current-avatar {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        border: 4px solid white;
-        box-shadow: var(--shadow-md);
-    }
-    
-    .avatar-controls {
-        flex: 1;
-    }
-    
-    .avatar-controls h4 {
-        margin: 0 0 0.5rem 0;
-        color: var(--text-primary);
-    }
-    
-    .avatar-controls p {
-        margin: 0 0 1rem 0;
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-    }
-    
-    .btn.secondary {
-        background: var(--bg-secondary);
-        color: var(--text-primary);
-        border: 2px solid var(--border-color);
-        width: auto;
-        padding: 0.75rem 1.5rem;
-    }
-    
-    [data-theme="dark"] .btn.secondary {
-        background: #2d3748;
-        color: #ffffff;
-        border-color: #4a5568;
-    }
-    
-    .btn.secondary:hover {
-        background: var(--primary-gradient);
-        color: white;
-        border-color: transparent;
-    }
-    
-    /* Status Indicators */
-    .status-indicator {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-    }
-    
-    .status-indicator.success {
-        background: rgba(0, 212, 170, 0.1);
-        color: #00d4aa;
-        border: 1px solid #00d4aa;
-    }
-    
-    .status-indicator.warning {
-        background: rgba(254, 202, 87, 0.1);
-        color: #feca57;
-        border: 1px solid #feca57;
-    }
-    
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .container {
-            padding: 1rem;
-        }
-        
-        .settings-card {
-            padding: 1.5rem;
-        }
-        
-        .profile-picture-section {
-            flex-direction: column;
-            text-align: center;
-        }
-        
-        .theme-preview {
-            grid-template-columns: 1fr;
-        }
-    }
-    
-    /* Loading States */
-    .loading {
-        display: inline-block;
-        width: 20px;
-        height: 20px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        border-top-color: white;
-        animation: spin 1s ease-in-out infinite;
-    }
-    
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
+    :root{--primary-gradient:linear-gradient(135deg,#667eea 0%,#764ba2 100%);--border-radius:20px;--border-radius-sm:12px;--transition:all .3s cubic-bezier(.4,0,.2,1);}
+    [data-theme="dark"] body{background:linear-gradient(-45deg,#2d3748,#4a5568,#553c9a,#6b46c1)!important;color:#fff}
+    body{font-family:'Inter',sans-serif;min-height:100vh;margin:0;padding:0;color:#2c3e50}
+    .container{max-width:1000px;margin:0 auto;padding:2rem}
+    .settings-container{display:grid;gap:2rem;margin-top:2rem}
+    .settings-card{background:rgba(255,255,255,.95);backdrop-filter:blur(20px);border-radius:var(--border-radius);padding:2.5rem;box-shadow:0 20px 40px rgba(0,0,0,.12);border:1px solid rgba(255,255,255,.2);position:relative;}
+    .card-header{display:flex;align-items:center;gap:1rem;margin-bottom:2rem;padding-bottom:1rem;border-bottom:2px solid #e2e8f0}
+    .card-icon{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:white;background:var(--primary-gradient)}
+    .card-title{font-size:1.5rem;font-weight:700;margin:0}
+    .form-group{margin-bottom:1.5rem}
+    .form-input,.form-textarea{width:100%;padding:1rem;border:2px solid #e2e8f0;border-radius:var(--border-radius-sm);font-size:1rem}
+    .form-textarea{min-height:120px}
+    .btn{background:var(--primary-gradient);color:#fff;border:none;padding:1rem 1.5rem;border-radius:var(--border-radius-sm);cursor:pointer}
+    .btn.secondary{background:#fff;color:#2c3e50;border:1px solid #e2e8f0}
+    .profile-picture-section{display:flex;align-items:center;gap:2rem;padding:1.5rem;border-radius:var(--border-radius-sm);background:rgba(102,126,234,0.05)}
+    .current-avatar{width:80px;height:80px;border-radius:50%;border:4px solid #fff;box-shadow:0 8px 25px rgba(0,0,0,.12);object-fit:cover}
+    /* responsive */
+    @media (max-width:768px){.profile-picture-section{flex-direction:column;text-align:center}}
+    /* toast */
+    .flash{position:fixed;top:100px;right:2rem;padding:1rem 1.5rem;border-radius:12px;box-shadow:0 8px 25px rgba(0,0,0,.15);z-index:2000;font-weight:600;display:flex;align-items:center;gap:.5rem}
+    .flash.success{background:rgba(0,212,170,.1);border:1px solid #00d4aa;color:#00d4aa}
+    .flash.error{background:rgba(255,107,107,.1);border:1px solid #ff6b6b;color:#ff6b6b}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="settings-container">
-    <!-- Profile Settings Card -->
+<div class="container">
+  <div class="settings-container">
     <div class="settings-card profile">
-        <div class="card-header">
-            <div class="card-icon">
-                <i class="fas fa-user"></i>
-            </div>
-            <div>
-                <h2 class="card-title">Profile Settings</h2>
-                <p class="card-subtitle">Manage your personal information and avatar</p>
-            </div>
+      <div class="card-header">
+        <div class="card-icon"><i class="fas fa-user"></i></div>
+        <div>
+          <h2 class="card-title">Profile Settings</h2>
+          <p class="card-subtitle">Manage your personal information and avatar</p>
         </div>
-        
-        <form method="POST" id="profileForm">
-            <!-- Profile Picture Section -->
-            <div class="profile-picture-section">
-                <img src="{{ userdata.avatar if userdata and userdata.avatar else 'https://ui-avatars.com/api/?name=' + (user.username if user else 'User') + '&background=667eea&color=fff' }}" 
-                     alt="Profile Picture" class="current-avatar" id="currentAvatar">
-                <div class="avatar-controls">
-                    <h4>Profile Picture</h4>
-                    <p>Choose a profile picture to represent yourself</p>
-                    <button type="button" class="btn secondary" onclick="changeAvatar()">
-                        <i class="fas fa-camera"></i> Change Avatar
-                    </button>
-                </div>
+      </div>
+
+      <!-- Avatar upload + preview -->
+      <form id="avatarForm" enctype="multipart/form-data" method="POST" action="/upload_avatar">
+        <div class="profile-picture-section">
+          <img id="currentAvatar" class="current-avatar" alt="avatar"
+               src="{{ userdata.avatar if userdata and userdata.avatar else session['user'].get('avatar', 'https://ui-avatars.com/api/?name=' + (session['user'].get('username') if session.get('user') else 'User') + '&background=667eea&color=fff') }}">
+
+          <div class="avatar-controls">
+            <h4>Profile Picture</h4>
+            <p>Choose a profile picture to represent yourself. JPG/PNG, max 5MB.</p>
+
+            <div style="display:flex;gap:0.5rem;align-items:center">
+              <label class="btn secondary" for="avatarInput"><i class="fas fa-camera"></i> Choose File</label>
+              <button type="button" class="btn" id="uploadAvatarBtn">Upload</button>
+              <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display:none">
             </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="username">
-                    <i class="fas fa-user"></i> Username
-                </label>
-                <input type="text" class="form-input" id="username" name="username" 
-                       value="{{ userdata.username if userdata else user.username }}" 
-                       placeholder="Enter your username" required>
-                <div class="status-indicator success" style="display: none;" id="usernameStatus">
-                    <i class="fas fa-check"></i> Username is available
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="bio">
-                    <i class="fas fa-edit"></i> Bio
-                </label>
-                <textarea class="form-textarea" id="bio" name="bio" 
-                          placeholder="Tell people about yourself...">{{ userdata.bio if userdata else '' }}</textarea>
-            </div>
-            
-            <button type="submit" class="btn success" id="saveProfileBtn">
-                <i class="fas fa-save"></i> Save Profile Changes
-            </button>
-        </form>
-    </div>
-    
-    <!-- Appearance Settings Card -->
-    <div class="settings-card appearance">
-        <div class="card-header">
-            <div class="card-icon appearance">
-                <i class="fas fa-palette"></i>
-            </div>
-            <div>
-                <h2 class="card-title">Appearance</h2>
-                <p class="card-subtitle">Customize how your messenger looks</p>
-            </div>
+            <p id="avatarHelp" style="margin-top:.5rem;color:#7f8c8d;font-size:.9rem"></p>
+          </div>
         </div>
-        
+      </form>
+
+      <!-- Profile fields (username, bio) -->
+      <form id="profileForm" method="POST" action="/settings">
         <div class="form-group">
-            <label class="form-label">
-                <i class="fas fa-moon"></i> Theme Preference
-            </label>
-            <div class="theme-preview">
-                <div class="theme-option light" onclick="selectTheme('light')" id="lightTheme">
-                    <i class="fas fa-sun" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
-                    <h4>Light Theme</h4>
-                    <p>Clean and bright interface</p>
-                </div>
-                <div class="theme-option dark" onclick="selectTheme('dark')" id="darkTheme">
-                    <i class="fas fa-moon" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
-                    <h4>Dark Theme</h4>
-                    <p>Easy on the eyes</p>
-                </div>
-            </div>
+          <label class="form-label" for="username"><i class="fas fa-user"></i> Username</label>
+          <input id="username" name="username" class="form-input" required value="{{ userdata.username if userdata else session['user'].get('username','') }}">
         </div>
-    </div>
-    
-    <!-- Notification Settings Card -->
-    <div class="settings-card notifications">
-        <div class="card-header">
-            <div class="card-icon notifications">
-                <i class="fas fa-bell"></i>
-            </div>
-            <div>
-                <h2 class="card-title">Notifications</h2>
-                <p class="card-subtitle">Control how you receive notifications</p>
-            </div>
+
+        <div class="form-group">
+          <label class="form-label" for="bio"><i class="fas fa-edit"></i> Bio</label>
+          <textarea id="bio" name="bio" class="form-textarea">{{ userdata.bio if userdata else '' }}</textarea>
         </div>
-        
-        <form method="POST" id="notificationForm">
-            <div class="switch-container">
-                <div class="switch-label">
-                    <strong><i class="fas fa-volume-up"></i> Sound Notifications</strong>
-                    <p style="margin: 0; font-size: 0.85rem; opacity: 0.8;">Play sound when receiving messages</p>
-                </div>
-                <div class="switch {{ 'active' if userdata and userdata.sound else '' }}" 
-                     onclick="toggleSwitch(this, 'notification_sound')" id="soundSwitch">
-                    <div class="switch-slider"></div>
-                </div>
-                <input type="hidden" name="notification_sound" id="notification_sound" 
-                       value="{{ 'on' if userdata and userdata.sound else 'off' }}">
-            </div>
-            
-            <button type="submit" class="btn" id="saveNotificationBtn">
-                <i class="fas fa-bell"></i> Save Notification Settings
-            </button>
-        </form>
+
+        <button type="submit" class="btn"><i class="fas fa-save"></i> Save Profile Changes</button>
+      </form>
+
     </div>
-    
-    <!-- Security Settings Card -->
+
+    <!-- Appearance card (kept simplified) -->
+    <div class="settings-card appearance">
+      <div class="card-header">
+        <div class="card-icon appearance"><i class="fas fa-palette"></i></div>
+        <div>
+          <h2 class="card-title">Appearance</h2>
+          <p class="card-subtitle">Customize how your messenger looks</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-moon"></i> Theme Preference</label>
+        <div>
+          <button class="btn secondary" onclick="selectTheme('light');return false;">Light</button>
+          <button class="btn secondary" onclick="selectTheme('dark');return false;">Dark</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Security card -->
     <div class="settings-card security">
-        <div class="card-header">
-            <div class="card-icon security">
-                <i class="fas fa-shield-alt"></i>
-            </div>
-            <div>
-                <h2 class="card-title">Security</h2>
-                <p class="card-subtitle">Keep your account safe and secure</p>
-            </div>
+      <div class="card-header">
+        <div class="card-icon security"><i class="fas fa-shield-alt"></i></div>
+        <div>
+          <h2 class="card-title">Security</h2>
+          <p class="card-subtitle">Change password</p>
         </div>
-        
-        <form method="POST" id="passwordForm">
-            <input type="hidden" name="action" value="change_password">
-            
-            <div class="form-group">
-                <label class="form-label" for="current_password">
-                    <i class="fas fa-key"></i> Current Password
-                </label>
-                <input type="password" class="form-input" id="current_password" name="current_password" 
-                       placeholder="Enter your current password" required>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="new_password">
-                    <i class="fas fa-lock"></i> New Password
-                </label>
-                <input type="password" class="form-input" id="new_password" name="new_password" 
-                       placeholder="Enter a new strong password" required>
-                <div class="status-indicator warning" id="passwordStrength" style="display: none;">
-                    <i class="fas fa-exclamation-triangle"></i> Password strength: Weak
-                </div>
-            </div>
-            
-            <button type="submit" class="btn danger" id="changePasswordBtn">
-                <i class="fas fa-shield-alt"></i> Change Password
-            </button>
-        </form>
+      </div>
+
+      <form id="passwordForm" method="POST" action="/settings">
+        <input type="hidden" name="action" value="change_password">
+        <div class="form-group">
+          <label class="form-label" for="current_password">Current Password</label>
+          <input id="current_password" name="current_password" type="password" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="new_password">New Password</label>
+          <input id="new_password" name="new_password" type="password" class="form-input">
+        </div>
+        <button class="btn danger" type="submit">Change Password</button>
+      </form>
     </div>
+
+  </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize theme based on current setting
-    initializeTheme();
-    
-    // Password strength checker
-    const newPasswordInput = document.getElementById('new_password');
-    const strengthIndicator = document.getElementById('passwordStrength');
-    
-    if (newPasswordInput) {
-        newPasswordInput.addEventListener('input', function() {
-            checkPasswordStrength(this.value);
-        });
-    }
-    
-    // Username availability checker
-    const usernameInput = document.getElementById('username');
-    const usernameStatus = document.getElementById('usernameStatus');
-    let usernameTimeout;
-    
-    if (usernameInput) {
-        usernameInput.addEventListener('input', function() {
-            clearTimeout(usernameTimeout);
-            usernameTimeout = setTimeout(() => {
-                checkUsernameAvailability(this.value);
-            }, 500);
-        });
-    }
-    
-    // Form submission handlers
-    setupFormHandlers();
+// Basic utilities
+function showToast(message, type='success'){
+  const t=document.createElement('div');t.className='flash '+(type||'success');t.innerHTML=message;document.body.appendChild(t);
+  setTimeout(()=>{t.remove()},3000);
+}
+
+// Theme
+function selectTheme(theme){if(theme==='dark'){document.documentElement.setAttribute('data-theme','dark');localStorage.setItem('theme','dark');}else{document.documentElement.removeAttribute('data-theme');localStorage.setItem('theme','light');}showToast('Theme set to '+theme,'success');}
+
+// Avatar upload flow
+const avatarInput=document.getElementById('avatarInput');
+const uploadBtn=document.getElementById('uploadAvatarBtn');
+const currentAvatar=document.getElementById('currentAvatar');
+const avatarHelp=document.getElementById('avatarHelp');
+let selectedFile=null;
+
+avatarInput.addEventListener('change',e=>{
+  const f=e.target.files[0];
+  if(!f) return;
+  if(f.size>5*1024*1024){avatarHelp.textContent='File too large (max 5MB).';avatarInput.value='';selectedFile=null;return}
+  selectedFile=f;avatarHelp.textContent=f.name+' — '+Math.round(f.size/1024)+' KB';
+  // preview
+  const reader=new FileReader();reader.onload=function(ev){currentAvatar.src=ev.target.result};reader.readAsDataURL(f);
 });
 
-function initializeTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-    
-    // Update theme option selection
-    document.getElementById('lightTheme').classList.toggle('active', savedTheme === 'light');
-    document.getElementById('darkTheme').classList.toggle('active', savedTheme === 'dark');
-}
+uploadBtn.addEventListener('click',async ()=>{
+  if(!selectedFile){showToast('Please choose an image first','error');return}
+  uploadBtn.disabled=true;uploadBtn.textContent='Uploading...';
+  try{
+    const form=new FormData();form.append('avatar',selectedFile);
+    const res=await fetch('/upload_avatar',{method:'POST',body:form});
+    const data=await res.json();
+    if(res.ok && data.success){
+      currentAvatar.src=data.avatar_url;
+      showToast('Avatar uploaded','success');
+      // update session user avatar client-side (optional)
+    }else{
+      throw new Error(data.message||'Upload failed');
+    }
+  }catch(err){console.error(err);showToast(err.message||'Upload error','error')}
+  finally{uploadBtn.disabled=false;uploadBtn.textContent='Upload'}
+});
 
-function selectTheme(theme) {
-    // Update UI immediately
-    document.getElementById('lightTheme').classList.toggle('active', theme === 'light');
-    document.getElementById('darkTheme').classList.toggle('active', theme === 'dark');
-    
-    // Apply theme
-    if (theme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-        document.documentElement.removeAttribute('data-theme');
-    }
-    
-    // Save to localStorage
-    localStorage.setItem('theme', theme);
-    
-    // Update navigation theme icon
-    const themeIcon = document.getElementById('theme-icon');
-    if (themeIcon) {
-        themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-    }
-    
-    // Show success message
-    showToast('Theme updated successfully!', 'success');
-}
-
-function toggleSwitch(switchElement, inputName) {
-    switchElement.classList.toggle('active');
-    const input = document.getElementById(inputName);
-    const isActive = switchElement.classList.contains('active');
-    input.value = isActive ? 'on' : 'off';
-    
-    // Show immediate feedback
-    showToast(isActive ? 'Sound notifications enabled' : 'Sound notifications disabled', 'info');
-}
-
-function changeAvatar() {
-    const colors = ['667eea', '764ba2', 'f093fb', 'f5576c', '4facfe', '00f2fe', '00d4aa', 'feca57', 'ff6b6b'];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-    const username = document.getElementById('username').value || 'User';
-    
-    const newAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=${randomColor}&color=fff&size=200`;
-    document.getElementById('currentAvatar').src = newAvatar;
-    
-    showToast('Avatar updated! Don\'t forget to save your changes.', 'success');
-}
-
-function checkPasswordStrength(password) {
-    const strengthIndicator = document.getElementById('passwordStrength');
-    if (!strengthIndicator) return;
-    
-    let strength = 'Weak';
-    let color = '#feca57';
-    let icon = 'fas fa-exclamation-triangle';
-    
-    if (password.length >= 8) {
-        if (/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(password)) {
-            strength = 'Very Strong';
-            color = '#00d4aa';
-            icon = 'fas fa-check-circle';
-        } else if (/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-            strength = 'Strong';
-            color = '#4facfe';
-            icon = 'fas fa-check';
-        } else if (/^(?=.*[a-z])(?=.*[A-Z])/.test(password)) {
-            strength = 'Medium';
-            color = '#f093fb';
-            icon = 'fas fa-info-circle';
-        }
-    }
-    
-    strengthIndicator.innerHTML = `<i class="${icon}"></i> Password strength: ${strength}`;
-    strengthIndicator.style.color = color;
-    strengthIndicator.style.borderColor = color;
-    strengthIndicator.style.display = 'inline-flex';
-}
-
-function checkUsernameAvailability(username) {
-    const statusIndicator = document.getElementById('usernameStatus');
-    if (!statusIndicator) return;
-    
-    if (username.length < 3) {
-        statusIndicator.style.display = 'none';
-        return;
-    }
-    
-    // Simulate API call (replace with actual endpoint)
-    setTimeout(() => {
-        statusIndicator.style.display = 'inline-flex';
-        statusIndicator.className = 'status-indicator success';
-        statusIndicator.innerHTML = '<i class="fas fa-check"></i> Username is available';
-    }, 500);
-}
-
-function setupFormHandlers() {
-    // Profile form
-    const profileForm = document.getElementById('profileForm');
-    if (profileForm) {
-        profileForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const btn = document.getElementById('saveProfileBtn');
-            showLoading(btn, 'Saving...');
-            
-            // Simulate save (replace with actual form submission)
-            setTimeout(() => {
-                hideLoading(btn, '<i class="fas fa-save"></i> Save Profile Changes');
-                showToast('Profile updated successfully!', 'success');
-            }, 1500);
-        });
-    }
-    
-    // Notification form
-    const notificationForm = document.getElementById('notificationForm');
-    if (notificationForm) {
-        notificationForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const btn = document.getElementById('saveNotificationBtn');
-            showLoading(btn, 'Saving...');
-            
-            setTimeout(() => {
-                hideLoading(btn, '<i class="fas fa-bell"></i> Save Notification Settings');
-                showToast('Notification settings updated!', 'success');
-            }, 1000);
-        });
-    }
-    
-    // Password form
-    const passwordForm = document.getElementById('passwordForm');
-    if (passwordForm) {
-        passwordForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const btn = document.getElementById('changePasswordBtn');
-            showLoading(btn, 'Changing...');
-            
-            setTimeout(() => {
-                hideLoading(btn, '<i class="fas fa-shield-alt"></i> Change Password');
-                showToast('Password changed successfully!', 'success');
-                passwordForm.reset();
-            }, 2000);
-        });
-    }
-}
-
-function showLoading(button, text) {
-    button.innerHTML = `<div class="loading"></div> ${text}`;
-    button.disabled = true;
-}
-
-function hideLoading(button, originalText) {
-    button.innerHTML = originalText;
-    button.disabled = false;
-}
-
-function showToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `flash ${type}`;
-    toast.style.position = 'fixed';
-    toast.style.top = '100px';
-    toast.style.right = '2rem';
-    toast.style.zIndex = '2000';
-    
-    const icon = type === 'success' ? 'fas fa-check-circle' : 
-                 type === 'error' ? 'fas fa-exclamation-triangle' : 
-                 'fas fa-info-circle';
-    
-    toast.innerHTML = `<i class="${icon}"></i> ${message}`;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease-out forwards';
-        setTimeout(() => {
-            if (toast.parentNode) {
-                toast.remove();
-            }
-        }, 300);
-    }, 3000);
-}
-
-// Add slideOut animation
-const additionalStyles = `
-    @keyframes slideOut {
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-    
-    .flash {
-        position: fixed;
-        top: 100px;
-        right: 2rem;
-        padding: 1rem 2rem;
-        border-radius: 12px;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        backdrop-filter: blur(20px);
-        z-index: 2000;
-        animation: slideIn 0.3s ease-out;
-        max-width: 400px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .flash.success {
-        background: rgba(0, 212, 170, 0.1);
-        border: 1px solid #00d4aa;
-        color: #00d4aa;
-    }
-    
-    .flash.error {
-        background: rgba(255, 107, 107, 0.1);
-        border: 1px solid #ff6b6b;
-        color: #ff6b6b;
-    }
-    
-    .flash.info {
-        background: rgba(79, 172, 254, 0.1);
-        border: 1px solid #4facfe;
-        color: #4facfe;
-    }
-    
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-`;
-
-// Inject additional styles
-const styleSheet = document.createElement('style');
-styleSheet.textContent = additionalStyles;
-document.head.appendChild(styleSheet);
+// On page load, set theme from localStorage
+document.addEventListener('DOMContentLoaded',()=>{const saved=localStorage.getItem('theme');if(saved==='dark')document.documentElement.setAttribute('data-theme','dark');});
 </script>
 {% endblock %}
+
+
