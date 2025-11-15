@@ -197,8 +197,9 @@ def get_friend_requests(email):
             requests.append({'sender': fr['sender'], 'sender_username': sender['username'], 'sent_at': fr.get('sent_at', datetime.utcnow())})
     return requests
 
-def get_private_room_id(email1, email2):
-    return f"private_{'-'.join(sorted([email1, email2]))}"
+def get_private_room_id(user1, user2):
+    return f"private_{'-'.join(sorted([user1, user2]))}"
+
 
 def get_user_friends(email):
     if not IS_DB_AVAILABLE:
@@ -969,6 +970,7 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
+
 
 
 
