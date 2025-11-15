@@ -495,24 +495,28 @@ def upload_file():
         public_id = upload_result.get("public_id")
         file_size = upload_result.get("bytes")
 
+        # FIX: front-end needs file_path, so give both
         file_data = {
             'room': room,
             'author_username': session['user']['username'],
             'author_email': session['user']['email'],
             'message_type': 'file',
             'file_info': {
-                'file_url': file_url,
+                'file_url': file_url,       # original cloudinary URL
+                'file_path': file_url,      # <-- JS expects this key
                 'file_type': file_type,
                 'public_id': public_id,
                 'file_size': file_size
             },
-            'text': f"📎 Shared a file",
+            'text': "📎 Shared a file",
             'timestamp': datetime.now(timezone.utc)
         }
 
+        # Save to DB
         if IS_DB_AVAILABLE:
             mongo.db.messages.insert_one(file_data)
 
+        # Emit socket message
         socketio.emit('new_message', {
             'author_username': file_data['author_username'],
             'text': file_data['text'],
@@ -525,6 +529,7 @@ def upload_file():
 
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
+
 
 
 @app.route('/download/<filename>')
@@ -925,5 +930,6 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
+
 
 
