@@ -472,12 +472,25 @@ def serve_file(filename):
     try:
         if '..' in filename or filename.startswith('/'):
             return "Access denied", 403
+
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         if not os.path.exists(file_path):
-            app.logger.debug(f"File not found: {file_path}")
             return "File not found", 404
-        mime_type = mimetypes.guess_type(file_path)[0] or 'application/octet-stream'
-        return send_file(file_path, mimetype=mime_type, as_attachment=False, download_name=os.path.basename(file_path))
+
+        # Force correct audio MIME type
+        ext = filename.rsplit('.', 1)[-1].lower()
+
+        if ext == "webm":
+            mime_type = "audio/webm"
+        elif ext == "wav":
+            mime_type = "audio/wav"
+        elif ext == "mp3":
+            mime_type = "audio/mpeg"
+        else:
+            mime_type = mimetypes.guess_type(file_path)[0] or 'application/octet-stream'
+
+        return send_file(file_path, mimetype=mime_type)
+
     except Exception as e:
         app.logger.error(f"❌ Error serving file {filename}: {e}")
         return "Server error", 500
@@ -956,6 +969,7 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
+
 
 
 
