@@ -421,7 +421,33 @@ def chat():
         app.logger.error(f"Chat loading error: {e}")
         flash('Error loading chat messages.', 'error')
         return render_template('chat.html', user=session['user'], messages=[], room=room)
-
+      
+@app.route('/upload_avatar', methods=['POST'])
+@login_required
+def upload_avatar():
+    if 'avatar' not in request.files:
+        return jsonify({'success': False, 'message': 'No file uploaded'}), 400
+    file = request.files['avatar']
+    if file.filename == '':
+        return jsonify({'success': False, 'message': 'Empty filename'}), 400
+    # Optional size/type checks
+    try:
+        upload_result = cloudinary.uploader.upload(
+            file,
+            folder='enhanced_messenger/avatars',
+            overwrite=True,
+            resource_type='image',
+            transformation={'width': 512, 'height': 512, 'crop': 'limit'}
+        )
+        avatar_url = upload_result.get('secure_url')
+        if IS_DB_AVAILABLE and mongo:
+            mongo.db.users.update_one({'email': session['user']['email']}, {'$set': {'avatar': avatar_url}})
+        # update session copy so UI reflects change without logout
+        session['user']['avatar'] = avatar_url
+        return jsonify({'success': True, 'avatar_url': avatar_url})
+    except Exception as e:
+        app.logger.error(f"Avatar upload error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 # ------------- Theme API -------------
 @app.route('/api/theme', methods=['POST'])
 @login_required
@@ -930,6 +956,7 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
+
 
 
 
