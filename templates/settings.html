@@ -26,6 +26,14 @@
     .flash{position:fixed;top:100px;right:2rem;padding:1rem 1.5rem;border-radius:12px;box-shadow:0 8px 25px rgba(0,0,0,.15);z-index:2000;font-weight:600;display:flex;align-items:center;gap:.5rem}
     .flash.success{background:rgba(0,212,170,.1);border:1px solid #00d4aa;color:#00d4aa}
     .flash.error{background:rgba(255,107,107,.1);border:1px solid #ff6b6b;color:#ff6b6b}
+    .btn.danger{
+    background: #ff6b6b;
+    color: white;
+    }
+    .btn.danger:hover{
+        opacity: .9;
+    }
+
 </style>
 {% endblock %}
 
@@ -65,7 +73,8 @@
       <form id="profileForm" method="POST" action="/settings">
         <div class="form-group">
           <label class="form-label" for="username"><i class="fas fa-user"></i> Username</label>
-          <input id="username" name="username" class="form-input" required value="{{ userdata.username if userdata else session['user'].get('username','') }}">
+          <input id="username" name="username" class="form-input" required value="{{ (userdata.username if userdata and userdata.username else session['user'].get('username','')) }}">
+
         </div>
 
         <div class="form-group">
@@ -172,5 +181,6 @@ uploadBtn.addEventListener('click',async ()=>{
 document.addEventListener('DOMContentLoaded',()=>{const saved=localStorage.getItem('theme');if(saved==='dark')document.documentElement.setAttribute('data-theme','dark');});
 </script>
 {% endblock %}
+
 
 
