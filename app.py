@@ -37,24 +37,22 @@ os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'thumbnails'), exist_ok=Tr
 mongo = None
 
 if IS_DB_AVAILABLE:
-    app.config["MONGO_URI"] = "mongodb+srv://sirjannishad74:Sirjan2004@cluster0.ep61yjv.mongodb.net/messengerApp?retryWrites=true&w=majority&appName=Cluster0"
-    try:
-        mongo = PyMongo(app)
-        mongo.db.command('ping')
-        print("Successfully connected to MongoDB")
-        
-        # Create indexes for better performance
-        mongo.db.messages.create_index([("room", 1), ("timestamp", -1)])
-        mongo.db.users.create_index([("email", 1)], unique=True)
-        mongo.db.friends.create_index([("user1", 1), ("user2", 1)])
-        
-    except Exception as e:
-        print(f"MongoDB connection error: {e}")
+    app.config["MONGO_URI"] = os.environ.get("MONGO_URI")  # <- SAFE
+    if not app.config["MONGO_URI"]:
+        print("❌ ERROR: MONGO_URI NOT SET IN ENV")
         IS_DB_AVAILABLE = False
+    else:
+        try:
+            mongo = PyMongo(app)
+            mongo.db.command("ping")
+            print("✅ Connected to MongoDB Atlas")
+        except Exception as e:
+            print(f"❌ MongoDB Error: {e}")
+            IS_DB_AVAILABLE = False
 else:
     print("Database support disabled.")
 
-socketio = SocketIO(app, manage_session=True, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 # Active users tracking
 active_users = {}
@@ -1322,3 +1320,4 @@ if __name__ == '__main__':
         port=5000
 
     )
+
