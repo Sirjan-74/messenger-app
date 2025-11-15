@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Enhanced Messenger{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --success-color: #00d4aa;
+            --danger-color: #ff6b6b;
+            --warning-color: #feca57;
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.1);
+            --shadow-md: 0 8px 25px rgba(0,0,0,0.15);
+            --shadow-lg: 0 20px 40px rgba(0,0,0,0.2);
+            --border-radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --text-primary: #ffffff;
+            --text-secondary: #cbd5e0;
+            --bg-primary: #1a202c;
+            --bg-secondary: #2d3748;
+            --border-color: #4a5568;
+        }
+        
+        [data-theme="dark"] body {
+            background: linear-gradient(-45deg, #2d3748, #4a5568, #553c9a, #6b46c1) !important;
+            color: #ffffff;
+        }
+        
+        /* Global Dark Theme Fixes */
+        [data-theme="dark"] .navbar {
+            background: rgba(45, 55, 72, 0.95) !important;
+            border: 1px solid #4a5568 !important;
+        }
+        
+        [data-theme="dark"] .navbar-brand,
+        [data-theme="dark"] .nav-link {
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .card,
+        [data-theme="dark"] .settings-card,
+        [data-theme="dark"] .stat-card {
+            background: rgba(45, 55, 72, 0.95) !important;
+            border: 1px solid #4a5568 !important;
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .form-control,
+        [data-theme="dark"] .form-select,
+        [data-theme="dark"] .form-input,
+        [data-theme="dark"] .form-textarea {
+            background: #2d3748 !important;
+            border-color: #4a5568 !important;
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .form-control:focus,
+        [data-theme="dark"] .form-select:focus,
+        [data-theme="dark"] .form-input:focus,
+        [data-theme="dark"] .form-textarea:focus {
+            background: #2d3748 !important;
+            border-color: #667eea !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2) !important;
+        }
+        
+        [data-theme="dark"] .form-control::placeholder,
+        [data-theme="dark"] .form-input::placeholder,
+        [data-theme="dark"] .form-textarea::placeholder {
+            color: #cbd5e0 !important;
+        }
+        
+        [data-theme="dark"] .alert {
+            background: rgba(45, 55, 72, 0.95) !important;
+            border: 1px solid #4a5568 !important;
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .alert-success {
+            background: rgba(0, 212, 170, 0.2) !important;
+            border-left: 4px solid #00d4aa !important;
+            color: #00d4aa !important;
+        }
+        
+        [data-theme="dark"] .alert-danger {
+            background: rgba(255, 107, 107, 0.2) !important;
+            border-left: 4px solid #ff6b6b !important;
+            color: #ff6b6b !important;
+        }
+        
+        [data-theme="dark"] .alert-info {
+            background: rgba(79, 172, 254, 0.2) !important;
+            border-left: 4px solid #4facfe !important;
+            color: #4facfe !important;
+        }
+        
+        [data-theme="dark"] .btn-close {
+            filter: invert(1) !important;
+        }
+        
+        [data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3, 
+        [data-theme="dark"] h4, [data-theme="dark"] h5, [data-theme="dark"] h6 {
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .text-muted {
+            color: #cbd5e0 !important;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            transition: var(--transition);
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Enhanced Navigation */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-md);
+            border-radius: var(--border-radius) !important;
+            margin: 1rem 2rem;
+            padding: 1rem 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: var(--transition);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .nav-link {
+            color: var(--text-primary) !important;
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
+            border-radius: 8px;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+        
+        .nav-link:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            font-size: 1rem;
+            margin-left: 1rem;
+        }
+        
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-md);
+        }
+        
+        /* Toast Container */
+        .toast-container {
+            position: fixed;
+            top: 100px;
+            right: 1rem;
+            z-index: 1050;
+        }
+        
+        .toast {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: none;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 0.5rem;
+            min-width: 300px;
+        }
+        
+        [data-theme="dark"] .toast {
+            background: rgba(45, 55, 72, 0.95);
+            color: #ffffff;
+        }
+        
+        .toast-success {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .toast-error {
+            border-left: 4px solid var(--danger-color);
+        }
+        
+        .toast-info {
+            border-left: 4px solid #4facfe;
+        }
+        
+        .toast-header {
+            background: transparent;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            font-weight: 600;
+        }
+        
+        [data-theme="dark"] .toast-header {
+            border-bottom: 1px solid #4a5568;
+            color: #ffffff;
+        }
+        
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        [data-theme="dark"] .loading-overlay {
+            background: rgba(45, 55, 72, 0.8);
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(102, 126, 234, 0.2);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .navbar {
+                margin: 0.5rem;
+                padding: 0.75rem 1rem;
+            }
+            
+            .toast-container {
+                right: 0.5rem;
+                left: 0.5rem;
+            }
+            
+            .toast {
+                min-width: auto;
+            }
+        }
+        
+        /* Smooth transitions for theme changes */
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        /* Fix for button visibility in dark mode */
+        [data-theme="dark"] .btn-outline-primary {
+            color: #667eea !important;
+            border-color: #667eea !important;
+        }
+        
+        [data-theme="dark"] .btn-outline-primary:hover {
+            background: #667eea !important;
+            color: white !important;
+        }
+        
+        /* Ensure proper contrast for all text elements */
+        [data-theme="dark"] p,
+        [data-theme="dark"] span,
+        [data-theme="dark"] div,
+        [data-theme="dark"] label {
+            color: #ffffff;
+        }
+        
+        [data-theme="dark"] .text-secondary {
+            color: #cbd5e0 !important;
+        }
+    </style>
+    
+    {% block extra_style %}{% endblock %}
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+    
+    <!-- Navigation (if user is logged in) -->
+    {% if 'user' in session %}
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-comments"></i>
+                Enhanced Messenger
+            </a>
+            
+            <div class="navbar-nav ms-auto d-flex align-items-center">
+                <a class="nav-link" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a class="nav-link" href="{{ url_for('profile') }}">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+                <a class="nav-link" href="{{ url_for('settings') }}">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+                
+                <!-- Theme Toggle Button -->
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme" id="themeToggle">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+    
+    <!-- Toast Container for Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" style="margin: 1rem 2rem;">
+                    <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }}"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    {% block content %}{% endblock %}
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+         let currentTheme = 'light';
+    
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeTheme();
+        setupThemeListeners();
+        setupNotificationHandlers();
+        autoHideFlashMessages();
+    });
+    
+    function initializeTheme() {
+        // Priority: localStorage > server preference > default
+        let savedTheme = localStorage.getItem('theme');
+        const serverTheme = '{{ user_theme if user_theme else "light" }}';
+        
+        // If no localStorage theme, use server theme
+        if (!savedTheme) {
+            savedTheme = serverTheme;
+            localStorage.setItem('theme', savedTheme);
+        }
+        
+        currentTheme = savedTheme;
+        
+        // Apply theme immediately (before page render)
+        applyTheme(currentTheme);
+        
+        // Update theme toggle icon
+        updateThemeIcon(currentTheme);
+        
+        console.log(`✅ Theme initialized: ${currentTheme}`);
+    }
+    
+    function applyTheme(theme) {
+        const html = document.documentElement;
+        const body = document.body;
+        const themeIcon = document.getElementById('themeIcon');
+        
+        if (theme === 'dark') {
+            html.setAttribute('data-theme', 'dark');
+            body.setAttribute('data-theme', 'dark');
+        } else {
+            html.removeAttribute('data-theme');
+            body.removeAttribute('data-theme');
+        }
+        
+        currentTheme = theme;
+        localStorage.setItem('theme', theme);
+        
+        // Update icon
+        if (themeIcon) {
+            themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+        
+        // Force style recalculation
+        document.body.offsetHeight;
+        
+        console.log(`🎨 Theme applied: ${theme}`);
+    }
+    
+    function updateThemeIcon(theme) {
+        const themeIcon = document.getElementById('themeIcon');
+        if (themeIcon) {
+            themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+    }
+    
+    function toggleTheme() {
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        applyTheme(newTheme);
+        
+        // Save to server if user is logged in
+        {% if 'user' in session %}
+        saveThemeToServer(newTheme);
+        {% endif %}
+        
+        // Show feedback
+        showNotification(`Switched to ${newTheme} theme`, 'success', 2000);
+        
+        // Notify other tabs about theme change
+        try {
+            localStorage.setItem('theme_timestamp', Date.now().toString());
+            window.dispatchEvent(new CustomEvent('themeChanged', { 
+                detail: { theme: newTheme } 
+            }));
+        } catch (e) {
+            console.error('Theme notification failed:', e);
+        }
+    }
+    
+    function saveThemeToServer(theme) {
+        fetch('/api/theme', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ theme: theme })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('✅ Theme saved to server:', theme);
+            } else {
+                console.error('❌ Theme save failed:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Theme save error:', error);
+        });
+    }
+    
+    function setupThemeListeners() {
+        // Listen for storage changes (other tabs)
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'theme' && e.newValue && e.newValue !== currentTheme) {
+                console.log(`📡 Theme change detected from another tab: ${e.newValue}`);
+                applyTheme(e.newValue);
+            }
+        });
+        
+        // Listen for custom theme change events
+        window.addEventListener('themeChanged', function(e) {
+            if (e.detail.theme !== currentTheme) {
+                console.log(`📡 Theme change event: ${e.detail.theme}`);
+                applyTheme(e.detail.theme);
+            }
+        });
+        
+        // Listen for page visibility changes to sync theme
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme && savedTheme !== currentTheme) {
+                    console.log(`🔄 Syncing theme on page focus: ${savedTheme}`);
+                    applyTheme(savedTheme);
+                }
+            }
+        });
+    }
+    
+    // Global notification system
+    function showNotification(message, type = 'success', duration = 3000) {
+        const toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) return;
+        
+        const toastId = 'toast-' + Date.now();
+        
+        const iconMap = {
+            'success': 'check-circle',
+            'error': 'exclamation-triangle', 
+            'info': 'info-circle',
+            'warning': 'exclamation-triangle'
+        };
+        
+        const toastHTML = `
+            <div class="toast toast-${type}" role="alert" id="${toastId}">
+                <div class="toast-header">
+                    <i class="fas fa-${iconMap[type] || 'info-circle'} me-2"></i>
+                    <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+        
+        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, { delay: duration });
+        toast.show();
+        
+        // Remove element after hiding
+        toastElement.addEventListener('hidden.bs.toast', function() {
+            this.remove();
+        });
+    }
+    
+    function setupNotificationHandlers() {
+        // Request notification permission if available
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }
+    
+    function autoHideFlashMessages() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                bsAlert.close();
+            }, 5000);
+        });
+    }
+    
+    // Apply theme immediately on script load (before DOMContentLoaded)
+    (function() {
+        const savedTheme = localStorage.getItem('theme') || '{{ user_theme if user_theme else "light" }}';
+        const html = document.documentElement;
+        
+        if (savedTheme === 'dark') {
+            html.setAttribute('data-theme', 'dark');
+        } else {
+            html.removeAttribute('data-theme');
+        }
+    })();
