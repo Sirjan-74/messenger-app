@@ -1,3 +1,5 @@
+import eventlet
+eventlet.monkey_patch()
 import os
 import secrets
 import base64 
@@ -1314,5 +1316,6 @@ if __name__ == '__main__':
     print("=" * 50)
     
     socketio.run(app, host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+
 
 
