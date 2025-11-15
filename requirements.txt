@@ -6,3 +6,4 @@ pymongo
 dnspython
 eventlet
 werkzeug
+gunicorn
