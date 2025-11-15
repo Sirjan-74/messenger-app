@@ -473,60 +473,59 @@ def serve_thumbnail(filename):
 def upload_file():
     if 'file' not in request.files:
         return jsonify({'success': False, 'message': 'No file selected'})
+    
     file = request.files['file']
     room = request.form.get('room')
+
     if file.filename == '':
         return jsonify({'success': False, 'message': 'No file selected'})
+
     if not room:
         return jsonify({'success': False, 'message': 'Room required'})
-    if file and allowed_file(file.filename):
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = secure_filename(file.filename)
-        unique_filename = f"{timestamp}_{filename}"
-        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-        try:
-            file.save(file_path)
-            file_size = os.path.getsize(file_path)
-            file_type = get_file_type(filename)
-            mime_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-            file_url = f"/uploads/{unique_filename}"
-            thumbnail_url = None
-            if file_type == 'image':
-                thumbnail_url = create_thumbnail(file_path, unique_filename)
-            file_data = {
-                'room': room,
-                'author_username': session['user']['username'],
-                'author_email': session['user']['email'],
-                'message_type': 'file',
-                'file_info': {
-                    'original_name': filename,
-                    'filename': unique_filename,
-                    'file_path': file_url,
-                    'file_size': file_size,
-                    'file_type': file_type,
-                    'mime_type': mime_type,
-                    'thumbnail': thumbnail_url
-                },
-                'text': f"📎 Shared a {file_type}: {filename}",
-                'timestamp': datetime.now(timezone.utc)
-            }
-            if IS_DB_AVAILABLE:
-                result = mongo.db.messages.insert_one(file_data)
-                file_data['_id'] = result.inserted_id
-            app.logger.info(f"📎 File uploaded: {filename} -> {file_url}")
-            socketio.emit('new_message', {
-                'author_username': file_data['author_username'],
-                'text': file_data['text'],
-                'timestamp': file_data['timestamp'].isoformat(),
-                'message_type': 'file',
-                'file_info': file_data['file_info']
-            }, room=room)
-            return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_info': file_data['file_info']})
-        except Exception as e:
-            app.logger.error(f"❌ File upload error: {e}")
-            return jsonify({'success': False, 'message': f'Upload failed: {str(e)}'})
-    return jsonify({'success': False, 'message': 'File type not allowed'})
+
+    try:
+        # Upload to Cloudinary
+        upload_result = cloudinary.uploader.upload(
+            file,
+            resource_type="auto"
+        )
+
+        file_url = upload_result.get("secure_url")
+        file_type = upload_result.get("resource_type")
+        public_id = upload_result.get("public_id")
+        file_size = upload_result.get("bytes")
+
+        file_data = {
+            'room': room,
+            'author_username': session['user']['username'],
+            'author_email': session['user']['email'],
+            'message_type': 'file',
+            'file_info': {
+                'file_url': file_url,
+                'file_type': file_type,
+                'public_id': public_id,
+                'file_size': file_size
+            },
+            'text': f"📎 Shared a file",
+            'timestamp': datetime.now(timezone.utc)
+        }
+
+        if IS_DB_AVAILABLE:
+            mongo.db.messages.insert_one(file_data)
+
+        socketio.emit('new_message', {
+            'author_username': file_data['author_username'],
+            'text': file_data['text'],
+            'timestamp': file_data['timestamp'].isoformat(),
+            'message_type': 'file',
+            'file_info': file_data['file_info']
+        }, room=room)
+
+        return jsonify({'success': True, 'file_info': file_data['file_info']})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
 
 @app.route('/download/<filename>')
 @login_required
@@ -926,4 +925,5 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
+
 
