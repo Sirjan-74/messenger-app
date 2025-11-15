@@ -37,7 +37,7 @@ os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'thumbnails'), exist_ok=Tr
 mongo = None
 
 if IS_DB_AVAILABLE:
-    app.config["MONGO_URI"] = "mongodb+srv://sirjannishad74:Sirjan3008@cluster0.ep61yjv.mongodb.net/messengerApp?retryWrites=true&w=majority&appName=Cluster0"
+    app.config["MONGO_URI"] = "mongodb+srv://sirjannishad74:Sirjan2004@cluster0.ep61yjv.mongodb.net/messengerApp?retryWrites=true&w=majority&appName=Cluster0"
     try:
         mongo = PyMongo(app)
         mongo.db.command('ping')
@@ -1320,4 +1320,5 @@ if __name__ == '__main__':
         debug=True, 
         host='127.0.0.1', 
         port=5000
+
     )
