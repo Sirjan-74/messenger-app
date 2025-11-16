@@ -391,23 +391,28 @@ def get_emails_for_room(room):
     return []
 
 def update_unread_for_room(room, message_timestamp, author_email):
-    """Compute unread for each participant in the room and emit unread_update to their sockets."""
+    """Fix: Correct unread logic + skip sender + live emit."""
     if not IS_DB_AVAILABLE:
         return
     try:
         participants = get_emails_for_room(room)
-        for participant_email in participants:
-            if participant_email == author_email:
+
+        for participant in participants:
+            if participant == author_email:
                 continue
-            count = get_unread_count(participant_email, room)
-            sids = get_sids_for_email(participant_email)
-            for sid in sids:
-                try:
-                    emit('unread_update', {'room': room, 'unread_count': count}, to=sid)
-                except Exception:
-                    pass
+
+            unread_count = get_unread_count(participant, room)
+            sockets = get_sids_for_email(participant)
+
+            for sid in sockets:
+                emit('unread_update', {
+                    'room': room,
+                    'unread_count': unread_count
+                }, to=sid)
+
     except Exception as e:
-        app.logger.debug(f"update_unread_for_room error: {e}")
+        app.logger.error(f"Unread update error: {e}")
+
 
 # ---------------------------
 # Routes: Auth, Dashboard, Chat
@@ -880,36 +885,40 @@ def on_get_online_users():
 
 @socketio.on('mark_read')
 def on_mark_read(data):
-    """Client emits this when the user has actually viewed/seen messages (Option 2)."""
     if 'user' not in session:
         return
+
     room = data.get('room')
+    user_email = session['user']['email']
+
     if not room:
         return
-    try:
-        # Set last_read to now for this user-room
-        mark_messages_as_read(session['user']['email'], room)
-        # Send unread_update for this user (should be zero for this room)
-        count = get_unread_count(session['user']['email'], room)
-        for sid in get_sids_for_email(session['user']['email']):
-            try:
-                emit('unread_update', {'room': room, 'unread_count': count}, to=sid)
-            except Exception:
-                pass
-        # Also update other participants (so their UI can reflect changes if desired)
-        participants = get_emails_for_room(room)
-        for p_email in participants:
-            if p_email == session['user']['email']:
-                continue
-            sids = get_sids_for_email(p_email)
-            for sid in sids:
-                try:
-                    other_unread = get_unread_count(p_email, room)
-                    emit('unread_update', {'room': room, 'unread_count': other_unread}, to=sid)
-                except Exception:
-                    pass
-    except Exception as e:
-        app.logger.debug(f"mark_read error: {e}")
+
+    # mark in DB
+    mark_messages_as_read(user_email, room)
+
+    # unread becomes zero for this user
+    updated_count = get_unread_count(user_email, room)
+
+    # send update to this user
+    for sid in get_sids_for_email(user_email):
+        emit('unread_update', {
+            'room': room,
+            'unread_count': updated_count
+        }, to=sid)
+
+    # notify other participant so they refresh UI also
+    others = get_emails_for_room(room)
+    for participant in others:
+        if participant == user_email:
+            continue
+        count_other = get_unread_count(participant, room)
+        for sid in get_sids_for_email(participant):
+            emit('unread_update', {
+                'room': room,
+                'unread_count': count_other
+            }, to=sid)
+
 
 # ---------------------------
 # Friend endpoints
@@ -1173,3 +1182,4 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
+
