@@ -1022,7 +1022,20 @@
                 }, 5000);
             });
         });
+        socket.on('unread_update', data => {
+    const badge = document.querySelector(`[data-room="${data.room}"] .unread-badge`);
+    
+    if (!badge) return;
+
+    if (data.unread_count > 0) {
+        badge.innerText = data.unread_count;
+        badge.style.display = 'inline-flex';
+    } else {
+        badge.style.display = 'none';
+    }
+});
     </script>
 </body>
 
 </html>
+
