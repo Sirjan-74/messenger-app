@@ -1051,5 +1051,17 @@
     });
     
     console.log('✅ Chat script loaded successfully!');
+    function markRead() {
+    socket.emit("mark_read", { room: ROOM_ID });
+}
+window.addEventListener("load", markRead);
+document.getElementById("messages").addEventListener("scroll", function () {
+    let box = this;
+    if (box.scrollTop + box.clientHeight >= box.scrollHeight - 10) {
+        markRead();
+    }
+});
+
 </script>
+
 {% endblock %}
