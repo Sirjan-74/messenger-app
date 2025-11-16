@@ -598,33 +598,50 @@
     let recordingStartTime = null;
     let recordingInterval = null;
     let audioPlayers = new Map();
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Chat loaded:', currentRoom);
-        
+
+    document.addEventListener("DOMContentLoaded", () => {
         if (currentRoom) {
-            socket.emit('join_room', { room: currentRoom });
+            socket.emit("join_room", { room: currentRoom });
         }
-        
         loadTheme();
         setupMessageInput();
         setupFileInput();
         scrollToBottom();
+
+        // Mark read on load
+        setTimeout(markRead, 800);
     });
-    
-    socket.on('connect', () => {
-        document.getElementById('status').textContent = 'Connected';
-        console.log('✅ Connected');
+
+    socket.on("connect", () => {
+        document.getElementById("status").textContent = "Connected";
+        setTimeout(markRead, 800);
     });
-    
-    socket.on('disconnect', () => {
-        document.getElementById('status').textContent = 'Reconnecting...';
+
+    socket.on("disconnect", () => {
+        document.getElementById("status").textContent = "Reconnecting...";
     });
-    
-    socket.on('new_message', function(data) {
-        console.log('📨 New message:', data);
+
+    socket.on("new_message", data => {
         displayMessage(data);
         scrollToBottom();
+
+        // If user is at bottom, mark as read
+        const box = document.getElementById("messagesContainer");
+        const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
+        if (atBottom) setTimeout(markRead, 300);
+    });
+
+    // ---------- UNREAD FIX ----------
+    function markRead() {
+        socket.emit("mark_read", { room: currentRoom });
+        console.log("📘 Mark read:", currentRoom);
+    }
+
+    // When user scrolls to bottom
+    document.getElementById("messagesContainer").addEventListener("scroll", function () {
+        if (this.scrollTop + this.clientHeight >= this.scrollHeight - 20) {
+            markRead();
+        }
     });
     
     function displayMessage(data) {
@@ -1065,3 +1082,4 @@ document.getElementById("messages").addEventListener("scroll", function () {
 </script>
 
 {% endblock %}
+
