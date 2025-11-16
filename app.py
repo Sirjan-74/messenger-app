@@ -708,33 +708,50 @@ def download_file(filename):
 def upload_voice_message():
     if 'audio' not in request.files:
         return jsonify({'success': False, 'message': 'No audio file'})
+
     audio_file = request.files['audio']
     room = request.form.get('room')
     duration = float(request.form.get('duration', '0'))
+
     if not room:
         return jsonify({'success': False, 'message': 'Room required'})
+
     try:
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        safe_username = secure_filename(session['user']['username'])
-        filename = f"voice_{timestamp}_{safe_username}.webm"
-        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        audio_file.save(file_path)
-        file_size = os.path.getsize(file_path)
-        file_url = f"/uploads/{filename}"
+        # --- Upload to Cloudinary ---
+        upload_result = cloudinary.uploader.upload(
+            audio_file,
+            resource_type="video",   # Cloudinary treats audio/webm as video
+            folder="enhanced_messenger/voice_messages",
+            allowed_formats=["webm", "mp3", "wav", "ogg", "m4a"]
+        )
+
+        file_url = upload_result.get("secure_url")
+        public_id = upload_result.get("public_id")
+        file_size = upload_result.get("bytes")
+
+        # Message data
         voice_data = {
             'room': room,
             'author_username': session['user']['username'],
             'author_email': session['user']['email'],
             'message_type': 'voice',
-            'voice_info': {'filename': filename, 'file_path': file_url, 'duration': duration, 'file_size': file_size},
+            'voice_info': {
+                'file_url': file_url,
+                'file_path': file_url,
+                'public_id': public_id,
+                'duration': duration,
+                'file_size': file_size
+            },
             'text': f"🎤 Voice message ({duration:.1f}s)",
             'timestamp': datetime.now(timezone.utc)
         }
+
+        # Save to DB
         if IS_DB_AVAILABLE:
             result = mongo.db.messages.insert_one(voice_data)
             voice_data['_id'] = result.inserted_id
-        app.logger.info(f"🎤 Voice message saved: {filename} -> {file_url}")
+
+        # Emit over SocketIO
         socketio.emit('new_message', {
             'author_username': voice_data['author_username'],
             'text': voice_data['text'],
@@ -742,10 +759,13 @@ def upload_voice_message():
             'message_type': 'voice',
             'voice_info': voice_data['voice_info']
         }, room=room)
-        return jsonify({'success': True, 'message': 'Voice message sent', 'voice_info': voice_data['voice_info']})
+
+        return jsonify({'success': True, 'voice_info': voice_data['voice_info']})
+
     except Exception as e:
-        app.logger.error(f"❌ Voice upload error: {e}")
-        return jsonify({'success': False, 'message': f'Voice upload failed: {str(e)}'})
+        app.logger.error(f"Voice upload error: {e}")
+        return jsonify({'success': False, 'message': f"Upload failed: {str(e)}"})
+
 
 # ---------------------------
 # SocketIO events
@@ -1077,6 +1097,11 @@ def file_too_large(error):
 
 @app.errorhandler(404)
 def not_found(error):
+    # Agar request file ke liye thi, kuch redirect mat karo
+    if request.path.startswith("/uploads/"):
+        return "File not found", 404
+
+    # Normal pages ke liye redirect okay
     flash('Page not found.', 'error')
     return redirect(url_for('dashboard'))
 
@@ -1101,3 +1126,4 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
+
