@@ -679,6 +679,26 @@
                 height: 45px;
             }
         }
+        .unread-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ff4757;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.15);
+    animation: popIn 0.3s ease;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
     </style>
 </head>
 <body>
@@ -832,25 +852,36 @@
                     </h3>
                     
                     {% if friends %}
-                        {% for friend in friends %}
-                        <a href="{{ url_for('chat', room=friend.room) }}" class="friend">
-                            <div class="friend-avatar">
-                                <img src="{{ friend.avatar }}" alt="{{ friend.username }}">
-                                <div class="online-status {{ 'online' if friend.is_online else 'offline' }}"></div>
-                            </div>
-                            <div class="friend-info">
-                                <div class="friend-name">{{ friend.username }}</div>
-                                <div class="friend-status">
-                                    <i class="fas fa-circle" style="color: {{ '#00d4aa' if friend.is_online else '#7f8c8d' }}; font-size: 0.7rem;"></i>
-                                    {{ 'Active now' if friend.is_online else 'Last seen recently' }}
-                                </div>
-                            </div>
-                            <div class="chat-btn">
-                                <i class="fas fa-comment"></i>
-                                Chat
-                            </div>
-                        </a>
-                        {% endfor %}
+                    {% for friend in friends %}
+                    <a href="{{ url_for('chat', room=friend.room) }}" class="friend">
+                        <div class="friend-avatar" style="position: relative;">
+                            <img src="{{ friend.avatar }}" alt="{{ friend.username }}">
+
+        <!-- ONLINE/OFFLINE DOT -->
+        <div class="online-status {{ 'online' if friend.is_online else 'offline' }}"></div>
+
+        <!-- 🔥 UNREAD BADGE (Option C) -->
+        {% if friend.unread_count and friend.unread_count > 0 %}
+        <div class="unread-badge">
+            {{ friend.unread_count }}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="friend-info">
+        <div class="friend-name">{{ friend.username }}</div>
+
+        <div class="friend-status">
+            <i class="fas fa-circle" style="color: {{ '#00d4aa' if friend.is_online else '#7f8c8d' }}; font-size: 0.7rem;"></i>
+            {{ 'Active now' if friend.is_online else 'Last seen recently' }}
+        </div>
+    </div>
+
+    <div class="chat-btn">
+        <i class="fas fa-comment"></i> Chat
+    </div>
+</a>
+{% endfor %}
                     {% else %}
                         <div class="empty-state">
                             <i class="fas fa-user-friends"></i>
@@ -993,4 +1024,5 @@
         });
     </script>
 </body>
+
 </html>
