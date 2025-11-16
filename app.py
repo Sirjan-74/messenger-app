@@ -91,6 +91,7 @@ else:
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet", manage_session=True)
 
 # In-memory state
+# active_users: sid -> {'email':..., 'username':..., 'connected_at':...}
 active_users = {}
 user_rooms = {}
 typing_users = {}
@@ -162,22 +163,14 @@ def create_thumbnail(file_path, filename):
 # Room/username helpers
 # ---------------------------
 def normalize_username_for_room(username: str) -> str:
-    """
-    Convert username to safe token for room id.
-    Keep readable (preserve case from DB but remove unsafe chars).
-    """
     if not username:
         return username
-    # Remove spaces at ends and replace multiple spaces
     uname = username.strip()
-    # Replace spaces with '-' and remove chars except letters/numbers/_-
     uname = re.sub(r'\s+', '-', uname)
-    # remove characters not allowed
     uname = re.sub(r'[^A-Za-z0-9_\-\.]', '', uname)
     return uname
 
 def get_username_from_email(email: str):
-    """Return username for given email using DB if available, else fallback to prefix of email."""
     if not email:
         return email
     if IS_DB_AVAILABLE:
@@ -187,57 +180,35 @@ def get_username_from_email(email: str):
                 return user['username']
         except Exception:
             pass
-    # fallback: prefix before @, capitalized
     prefix = email.split('@', 1)[0]
     return prefix.capitalize()
 
 def get_private_room_id(user_a_identifier, user_b_identifier):
-    """
-    Accept either emails or usernames. Return room id in form:
-      private_NormalizedUserA-NormalizedUserB
-    Sorted by normalized lowercase to make deterministic room id.
-    """
-    # If looks like email (contains @), convert to username
     def _normalize(idf):
         if not idf:
             return ''
         if '@' in idf:
-            # treat as email -> lookup username
             uname = get_username_from_email(idf)
         else:
             uname = idf
-        # remove leading/trailing and normalize chars
         return normalize_username_for_room(uname)
 
     a = _normalize(user_a_identifier)
     b = _normalize(user_b_identifier)
-    # deterministic sort using lowercased value
     pair = sorted([a, b], key=lambda x: x.lower())
     return f"private_{pair[0]}-{pair[1]}"
 
 def convert_email_room_to_username_room_if_needed(room):
-    """
-    If room contains '@' (email-based), map to username-based room.
-    Returns (new_room, migrated_flag)
-    """
     if not room:
         return room, False
     if '@' not in room:
-        # already username-based
         return room, False
 
-    # expected format: private_email1-email2 (but user may pass only emails)
-    # remove leading 'private_' if present
     base = room
     if base.startswith('private_'):
         base = base[len('private_'):]
-    # split by '-' into two parts, but careful: emails contain @ and possibly hyphens; we assume stored pattern used earlier "email1-email2"
-    # we'll split on first '-' that separates two email addresses by looking from end
-    # simpler: split by '-' and then detect parts that contain '@'
     parts = base.split('-')
-    # try to find two email parts by joining segments appropriately:
     if len(parts) >= 2:
-        # heuristic: find split index where both sides contain '@'
         for i in range(1, len(parts)):
             left = '-'.join(parts[:i])
             right = '-'.join(parts[i:])
@@ -246,26 +217,20 @@ def convert_email_room_to_username_room_if_needed(room):
                 email2 = right
                 break
         else:
-            # fallback: take first and second segments
             email1 = parts[0]
             email2 = '-'.join(parts[1:])
     else:
-        # weird format; just return as-is
         return room, False
 
-    # lookup usernames
     uname1 = get_username_from_email(email1)
     uname2 = get_username_from_email(email2)
 
     new_room = get_private_room_id(uname1, uname2)
 
-    # if DB available and user wants migration, attempt to update entries
     perform_migration = os.environ.get("PERFORM_ROOM_MIGRATION", "") == "1"
     if IS_DB_AVAILABLE and perform_migration:
         try:
-            # Update friends collection entries that have this old room
             mongo.db.friends.update_many({'room': room}, {'$set': {'room': new_room}})
-            # Optionally update messages collection
             mongo.db.messages.update_many({'room': room}, {'$set': {'room': new_room}})
             app.logger.info(f"✅ Migrated room {room} -> {new_room} in DB")
             return new_room, True
@@ -282,7 +247,7 @@ def get_unread_count(user_email, room):
     if not IS_DB_AVAILABLE:
         return 0
     user_room_data = mongo.db.user_rooms.find_one({'user_email': user_email, 'room': room})
-    last_read = user_room_data.get('last_read') if user_room_data else datetime.min
+    last_read = user_room_data.get('last_read') if user_room_data else datetime.min.replace(tzinfo=timezone.utc)
     unread_count = mongo.db.messages.count_documents({
         'room': room,
         'timestamp': {'$gt': last_read},
@@ -310,11 +275,6 @@ def get_friend_requests(email):
     return requests
 
 def get_user_friends(email):
-    """
-    Returns a list of friend dicts:
-      { username, email, avatar, is_online, room, last_message, last_message_time, unread_count }
-    Will convert any legacy email-room to username-room on the fly.
-    """
     if not IS_DB_AVAILABLE:
         return []
     friends = []
@@ -325,11 +285,9 @@ def get_user_friends(email):
             continue
         is_online = any(u['email'] == friend_email for u in active_users.values())
         stored_room = rel.get('room')
-        # convert legacy email-based rooms
         if stored_room and '@' in stored_room:
             try:
                 new_room, migrated = convert_email_room_to_username_room_if_needed(stored_room)
-                # if migration set, update rel variable so next helper sees new room
                 stored_room = new_room
             except Exception:
                 stored_room = rel.get('room')
@@ -388,7 +346,6 @@ def get_user_stats(user_email):
     for rel in mongo.db.friends.find({'$or': [{'user1': user_email}, {'user2': user_email}]}):
         if rel.get('room'):
             room_val = rel.get('room')
-            # convert legacy rooms
             if '@' in room_val:
                 room_val, _ = convert_email_room_to_username_room_if_needed(room_val)
             user_rooms_set.add(room_val)
@@ -397,6 +354,60 @@ def get_user_stats(user_email):
     user_data = mongo.db.users.find_one({'email': user_email})
     join_date = user_data.get('created_at', datetime.now(timezone.utc)) if user_data else datetime.now(timezone.utc)
     return {'friends_count': friends_count, 'messages_sent': messages_sent, 'messages_received': max(0, messages_received), 'total_conversations': len(user_rooms_set), 'join_date': join_date}
+
+# ---------------------------
+# Participants / unread helper utilities
+# ---------------------------
+def get_sids_for_email(email):
+    """Return list of active socket sids for the given email."""
+    return [sid for sid, info in active_users.items() if info.get('email') == email]
+
+def get_emails_for_room(room):
+    """Return the participant emails for a room using friends collection or fallbacks."""
+    if not IS_DB_AVAILABLE:
+        return []
+    try:
+        rel = mongo.db.friends.find_one({'room': room})
+        if rel and 'user1' in rel and 'user2' in rel:
+            return [rel['user1'], rel['user2']]
+    except Exception:
+        pass
+    # fallback: try to parse private_ format
+    if room.startswith('private_'):
+        base = room[len('private_'):]
+        parts = base.split('-')
+        if len(parts) >= 2:
+            left = parts[0]
+            right = '-'.join(parts[1:])
+            # try direct username lookup
+            u1 = mongo.db.users.find_one({'username': left})
+            u2 = mongo.db.users.find_one({'username': right})
+            emails = []
+            if u1:
+                emails.append(u1['email'])
+            if u2:
+                emails.append(u2['email'])
+            return emails
+    return []
+
+def update_unread_for_room(room, message_timestamp, author_email):
+    """Compute unread for each participant in the room and emit unread_update to their sockets."""
+    if not IS_DB_AVAILABLE:
+        return
+    try:
+        participants = get_emails_for_room(room)
+        for participant_email in participants:
+            if participant_email == author_email:
+                continue
+            count = get_unread_count(participant_email, room)
+            sids = get_sids_for_email(participant_email)
+            for sid in sids:
+                try:
+                    emit('unread_update', {'room': room, 'unread_count': count}, to=sid)
+                except Exception:
+                    pass
+    except Exception as e:
+        app.logger.debug(f"update_unread_for_room error: {e}")
 
 # ---------------------------
 # Routes: Auth, Dashboard, Chat
@@ -500,15 +511,14 @@ def chat():
     # If old email-based room is detected, convert and redirect to username-based room
     if '@' in room:
         new_room, migrated = convert_email_room_to_username_room_if_needed(room)
-        # redirect to canonical username-based room
         return redirect(url_for('chat', room=new_room))
 
+    # Do NOT auto-mark messages as read here (Option 2)
     # If DB not available, just render page with empty messages
     if not IS_DB_AVAILABLE:
         return render_template('chat.html', user=session['user'], messages=[], room=room)
 
     try:
-        mark_messages_as_read(session['user']['email'], room)
         page = int(request.args.get('page', 1))
         per_page = 50
         skip = (page - 1) * per_page
@@ -549,20 +559,13 @@ def chat():
         # Participants: if room is private_x-y, extract usernames and lookup user docs
         participants = []
         if room.startswith('private_'):
-            # get parts after private_
             try:
                 parts = room[len('private_'):].split('-')
-                # pair should be exactly two tokens: if username contained dash originally it's normalized - ok
                 if len(parts) >= 2:
-                    # we treat whole left and right tokens
                     left = parts[0]
                     right = '-'.join(parts[1:])
-                    # find users by matching normalized username -> we stored username unmodified in DB,
-                    # but to find user by normalized value we'll search for username where normalized equals token
-                    # Try exact match first
                     u1 = mongo.db.users.find_one({'username': left})
                     u2 = mongo.db.users.find_one({'username': right})
-                    # fallback: try any user whose normalized username matches token
                     def find_by_normalized(token):
                         for u in mongo.db.users.find():
                             if normalize_username_for_room(u.get('username','')) == token:
@@ -624,7 +627,6 @@ def serve_file(filename):
             return "File not found", 404
         ext = filename.rsplit('.', 1)[-1].lower()
         if ext == "webm":
-            # some browsers accept audio/webm for .webm audio
             mime_type = "audio/webm"
         elif ext == "wav":
             mime_type = "audio/wav"
@@ -683,6 +685,8 @@ def upload_file():
         }
         if IS_DB_AVAILABLE:
             mongo.db.messages.insert_one(file_data)
+
+        # emit message to room
         socketio.emit('new_message', {
             'author_username': file_data['author_username'],
             'text': file_data['text'],
@@ -690,6 +694,11 @@ def upload_file():
             'message_type': 'file',
             'file_info': file_data['file_info']
         }, room=room)
+
+        # Update unread counts for participants
+        if IS_DB_AVAILABLE:
+            update_unread_for_room(room, file_data['timestamp'], file_data['author_email'])
+
         return jsonify({'success': True, 'file_info': file_data['file_info']})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
@@ -760,12 +769,15 @@ def upload_voice_message():
             'voice_info': voice_data['voice_info']
         }, room=room)
 
+        # Update unread counts for participants
+        if IS_DB_AVAILABLE:
+            update_unread_for_room(room, voice_data['timestamp'], voice_data['author_email'])
+
         return jsonify({'success': True, 'voice_info': voice_data['voice_info']})
 
     except Exception as e:
         app.logger.error(f"Voice upload error: {e}")
         return jsonify({'success': False, 'message': f"Upload failed: {str(e)}"})
-
 
 # ---------------------------
 # SocketIO events
@@ -804,8 +816,7 @@ def on_join_room(data):
         join_room(room)
         user_rooms[request.sid] = room
         app.logger.debug(f"👥 {session['user']['username']} joined room: {room}")
-        if IS_DB_AVAILABLE:
-            mark_messages_as_read(session['user']['email'], room)
+        # IMPORTANT: For Option 2 we DO NOT mark messages as read upon join.
         emit('user_joined', {'username': session['user']['username'], 'room': room}, to=room, include_self=False)
 
 @socketio.on('leave_room')
@@ -835,6 +846,13 @@ def on_send_message(data):
     app.logger.debug(f"💬 Message from {session['user']['username']} in {room}: {message_text[:50]}...")
     emit('new_message', {'author_username': message_data['author_username'], 'text': message_data['text'], 'timestamp': message_data['timestamp'].isoformat(), 'message_type': 'text'}, to=room)
 
+    # Update unread counts for participants (do this after insertion)
+    if IS_DB_AVAILABLE:
+        try:
+            update_unread_for_room(room, message_data['timestamp'], message_data['author_email'])
+        except Exception as e:
+            app.logger.debug(f"Failed to update unread for room {room}: {e}")
+
 @socketio.on('typing')
 def on_typing(data):
     if 'user' not in session:
@@ -859,6 +877,39 @@ def on_stop_typing(data):
 def on_get_online_users():
     online_users = [{'username': u['username'], 'email': u['email']} for u in active_users.values()]
     emit('online_users', {'users': online_users})
+
+@socketio.on('mark_read')
+def on_mark_read(data):
+    """Client emits this when the user has actually viewed/seen messages (Option 2)."""
+    if 'user' not in session:
+        return
+    room = data.get('room')
+    if not room:
+        return
+    try:
+        # Set last_read to now for this user-room
+        mark_messages_as_read(session['user']['email'], room)
+        # Send unread_update for this user (should be zero for this room)
+        count = get_unread_count(session['user']['email'], room)
+        for sid in get_sids_for_email(session['user']['email']):
+            try:
+                emit('unread_update', {'room': room, 'unread_count': count}, to=sid)
+            except Exception:
+                pass
+        # Also update other participants (so their UI can reflect changes if desired)
+        participants = get_emails_for_room(room)
+        for p_email in participants:
+            if p_email == session['user']['email']:
+                continue
+            sids = get_sids_for_email(p_email)
+            for sid in sids:
+                try:
+                    other_unread = get_unread_count(p_email, room)
+                    emit('unread_update', {'room': room, 'unread_count': other_unread}, to=sid)
+                except Exception:
+                    pass
+    except Exception as e:
+        app.logger.debug(f"mark_read error: {e}")
 
 # ---------------------------
 # Friend endpoints
@@ -899,7 +950,6 @@ def accept_friend():
     sender_email = request.form.get('sender')
     recipient_email = session['user']['email']
     mongo.db.friend_requests.delete_one({'sender': sender_email, 'recipient': recipient_email})
-    # create canonical username-based room
     sender_user = mongo.db.users.find_one({'email': sender_email})
     recipient_user = mongo.db.users.find_one({'email': recipient_email})
     if sender_user and recipient_user:
@@ -1097,11 +1147,8 @@ def file_too_large(error):
 
 @app.errorhandler(404)
 def not_found(error):
-    # Agar request file ke liye thi, kuch redirect mat karo
     if request.path.startswith("/uploads/"):
         return "File not found", 404
-
-    # Normal pages ke liye redirect okay
     flash('Page not found.', 'error')
     return redirect(url_for('dashboard'))
 
@@ -1126,4 +1173,3 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
-
