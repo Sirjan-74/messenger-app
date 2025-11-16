@@ -1,3 +1,4 @@
+# app.py
 import eventlet
 eventlet.monkey_patch()
 
@@ -7,6 +8,7 @@ import base64
 import mimetypes
 import threading
 import time
+import re
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta, timezone
 from functools import wraps
@@ -17,12 +19,11 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 
-cloudinary.config( 
-  cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME"), 
-  api_key = os.environ.get("CLOUDINARY_API_KEY"), 
+cloudinary.config(
+  cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME"),
+  api_key = os.environ.get("CLOUDINARY_API_KEY"),
   api_secret = os.environ.get("CLOUDINARY_API_SECRET")
 )
-
 
 # Optional PIL import
 try:
@@ -39,10 +40,9 @@ try:
     IS_DB_AVAILABLE = True
 except ImportError:
     IS_DB_AVAILABLE = False
-    # Keep logs minimal in production
     print("ERROR: PyMongo not installed. Run `pip install flask-pymongo` if using DB support")
 
-from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
 
 # Flask app config
 app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -58,7 +58,7 @@ ALLOWED_EXTENSIONS = set(os.environ.get(
     "txt,pdf,png,jpg,jpeg,gif,mp4,mp3,wav,doc,docx,xls,xlsx,ppt,pptx,zip,rar,webm"
 ).split(","))
 
-# ensure upload directories exist in repo (or add .gitkeep)
+# ensure upload directories exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'thumbnails'), exist_ok=True)
 
@@ -74,7 +74,7 @@ if IS_DB_AVAILABLE:
             mongo = PyMongo(app)
             mongo.db.command("ping")
             app.logger.info("✅ Connected to MongoDB Atlas")
-            # safe to create indexes if not exist
+            # create indexes
             try:
                 mongo.db.messages.create_index([("room", 1), ("timestamp", -1)])
                 mongo.db.users.create_index([("email", 1)], unique=True)
@@ -96,7 +96,7 @@ user_rooms = {}
 typing_users = {}
 
 # ---------------------------
-# Utility functions
+# Helper utilities
 # ---------------------------
 def login_required(f):
     @wraps(f)
@@ -132,24 +132,20 @@ def allowed_file(filename):
     return ext in ALLOWED_EXTENSIONS
 
 def create_thumbnail(file_path, filename):
-    """Create thumbnail for images; return URL path e.g. /uploads/thumbnails/thumb_name.jpg"""
     if not PIL_AVAILABLE:
         app.logger.debug("Pillow not available — skipping thumbnail creation")
         return None
     try:
         with Image.open(file_path) as img:
-            # convert to RGB if needed
             if img.mode in ('RGBA', 'LA', 'P'):
                 background = Image.new('RGB', img.size, (255, 255, 255))
                 if img.mode == 'P':
                     img = img.convert('RGBA')
                 background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
                 img = background
-            # choose resampling attr compatibly
             try:
                 resample = Image.Resampling.LANCZOS
             except Exception:
-                # Pillow < 9 fallback
                 resample = Image.LANCZOS if hasattr(Image, "LANCZOS") else Image.ANTIALIAS
             img.thumbnail((200, 200), resample)
             thumbnail_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'thumbnails')
@@ -157,14 +153,130 @@ def create_thumbnail(file_path, filename):
             thumbnail_filename = f"thumb_{filename}"
             thumbnail_path = os.path.join(thumbnail_dir, thumbnail_filename)
             img.save(thumbnail_path, 'JPEG', quality=85)
-            # Return URL path with leading slash
             return f"/uploads/thumbnails/{thumbnail_filename}"
     except Exception as e:
         app.logger.debug(f"Thumbnail creation failed for {filename}: {e}")
         return None
 
 # ---------------------------
-# DB helper functions (only used when DB is enabled)
+# Room/username helpers
+# ---------------------------
+def normalize_username_for_room(username: str) -> str:
+    """
+    Convert username to safe token for room id.
+    Keep readable (preserve case from DB but remove unsafe chars).
+    """
+    if not username:
+        return username
+    # Remove spaces at ends and replace multiple spaces
+    uname = username.strip()
+    # Replace spaces with '-' and remove chars except letters/numbers/_-
+    uname = re.sub(r'\s+', '-', uname)
+    # remove characters not allowed
+    uname = re.sub(r'[^A-Za-z0-9_\-\.]', '', uname)
+    return uname
+
+def get_username_from_email(email: str):
+    """Return username for given email using DB if available, else fallback to prefix of email."""
+    if not email:
+        return email
+    if IS_DB_AVAILABLE:
+        try:
+            user = mongo.db.users.find_one({'email': email})
+            if user and user.get('username'):
+                return user['username']
+        except Exception:
+            pass
+    # fallback: prefix before @, capitalized
+    prefix = email.split('@', 1)[0]
+    return prefix.capitalize()
+
+def get_private_room_id(user_a_identifier, user_b_identifier):
+    """
+    Accept either emails or usernames. Return room id in form:
+      private_NormalizedUserA-NormalizedUserB
+    Sorted by normalized lowercase to make deterministic room id.
+    """
+    # If looks like email (contains @), convert to username
+    def _normalize(idf):
+        if not idf:
+            return ''
+        if '@' in idf:
+            # treat as email -> lookup username
+            uname = get_username_from_email(idf)
+        else:
+            uname = idf
+        # remove leading/trailing and normalize chars
+        return normalize_username_for_room(uname)
+
+    a = _normalize(user_a_identifier)
+    b = _normalize(user_b_identifier)
+    # deterministic sort using lowercased value
+    pair = sorted([a, b], key=lambda x: x.lower())
+    return f"private_{pair[0]}-{pair[1]}"
+
+def convert_email_room_to_username_room_if_needed(room):
+    """
+    If room contains '@' (email-based), map to username-based room.
+    Returns (new_room, migrated_flag)
+    """
+    if not room:
+        return room, False
+    if '@' not in room:
+        # already username-based
+        return room, False
+
+    # expected format: private_email1-email2 (but user may pass only emails)
+    # remove leading 'private_' if present
+    base = room
+    if base.startswith('private_'):
+        base = base[len('private_'):]
+    # split by '-' into two parts, but careful: emails contain @ and possibly hyphens; we assume stored pattern used earlier "email1-email2"
+    # we'll split on first '-' that separates two email addresses by looking from end
+    # simpler: split by '-' and then detect parts that contain '@'
+    parts = base.split('-')
+    # try to find two email parts by joining segments appropriately:
+    if len(parts) >= 2:
+        # heuristic: find split index where both sides contain '@'
+        for i in range(1, len(parts)):
+            left = '-'.join(parts[:i])
+            right = '-'.join(parts[i:])
+            if '@' in left and '@' in right:
+                email1 = left
+                email2 = right
+                break
+        else:
+            # fallback: take first and second segments
+            email1 = parts[0]
+            email2 = '-'.join(parts[1:])
+    else:
+        # weird format; just return as-is
+        return room, False
+
+    # lookup usernames
+    uname1 = get_username_from_email(email1)
+    uname2 = get_username_from_email(email2)
+
+    new_room = get_private_room_id(uname1, uname2)
+
+    # if DB available and user wants migration, attempt to update entries
+    perform_migration = os.environ.get("PERFORM_ROOM_MIGRATION", "") == "1"
+    if IS_DB_AVAILABLE and perform_migration:
+        try:
+            # Update friends collection entries that have this old room
+            mongo.db.friends.update_many({'room': room}, {'$set': {'room': new_room}})
+            # Optionally update messages collection
+            mongo.db.messages.update_many({'room': room}, {'$set': {'room': new_room}})
+            app.logger.info(f"✅ Migrated room {room} -> {new_room} in DB")
+            return new_room, True
+        except Exception as e:
+            app.logger.warning(f"Could not migrate room in DB: {e}")
+            return new_room, False
+
+    return new_room, False
+
+# ---------------------------
+# DB helper functions (only used when DB enabled)
 # ---------------------------
 def get_unread_count(user_email, room):
     if not IS_DB_AVAILABLE:
@@ -197,30 +309,41 @@ def get_friend_requests(email):
             requests.append({'sender': fr['sender'], 'sender_username': sender['username'], 'sent_at': fr.get('sent_at', datetime.utcnow())})
     return requests
 
-def get_private_room_id(user1, user2):
-    return f"private_{'-'.join(sorted([user1, user2]))}"
-
-
 def get_user_friends(email):
+    """
+    Returns a list of friend dicts:
+      { username, email, avatar, is_online, room, last_message, last_message_time, unread_count }
+    Will convert any legacy email-room to username-room on the fly.
+    """
     if not IS_DB_AVAILABLE:
         return []
     friends = []
     for rel in mongo.db.friends.find({'$or': [{'user1': email}, {'user2': email}]}):
         friend_email = rel['user2'] if rel['user1'] == email else rel['user1']
         fuser = mongo.db.users.find_one({'email': friend_email})
-        if fuser:
-            is_online = any(u['email'] == friend_email for u in active_users.values())
-            last_message = mongo.db.messages.find_one({'room': rel.get('room')}, sort=[('timestamp', -1)])
-            friends.append({
-                'username': fuser['username'],
-                'email': friend_email,
-                'avatar': fuser.get('avatar', f'https://ui-avatars.com/api/?name={fuser["username"]}&background=random&color=fff'),
-                'is_online': is_online,
-                'room': rel.get('room'),
-                'last_message': last_message.get('text', '') if last_message else '',
-                'last_message_time': last_message.get('timestamp') if last_message else None,
-                'unread_count': get_unread_count(email, rel.get('room'))
-            })
+        if not fuser:
+            continue
+        is_online = any(u['email'] == friend_email for u in active_users.values())
+        stored_room = rel.get('room')
+        # convert legacy email-based rooms
+        if stored_room and '@' in stored_room:
+            try:
+                new_room, migrated = convert_email_room_to_username_room_if_needed(stored_room)
+                # if migration set, update rel variable so next helper sees new room
+                stored_room = new_room
+            except Exception:
+                stored_room = rel.get('room')
+        last_message = mongo.db.messages.find_one({'room': stored_room}, sort=[('timestamp', -1)]) if stored_room else None
+        friends.append({
+            'username': fuser['username'],
+            'email': friend_email,
+            'avatar': fuser.get('avatar', f'https://ui-avatars.com/api/?name={fuser["username"]}&background=random&color=fff'),
+            'is_online': is_online,
+            'room': stored_room,
+            'last_message': last_message.get('text', '') if last_message else '',
+            'last_message_time': last_message.get('timestamp') if last_message else None,
+            'unread_count': get_unread_count(email, stored_room) if stored_room else 0
+        })
     friends.sort(key=lambda f: (not f['is_online'], f['last_message_time'] or datetime.min), reverse=True)
     return friends
 
@@ -264,7 +387,11 @@ def get_user_stats(user_email):
     user_rooms_set = set()
     for rel in mongo.db.friends.find({'$or': [{'user1': user_email}, {'user2': user_email}]}):
         if rel.get('room'):
-            user_rooms_set.add(rel['room'])
+            room_val = rel.get('room')
+            # convert legacy rooms
+            if '@' in room_val:
+                room_val, _ = convert_email_room_to_username_room_if_needed(room_val)
+            user_rooms_set.add(room_val)
     total_messages_in_conversations = mongo.db.messages.count_documents({'room': {'$in': list(user_rooms_set)}}) if user_rooms_set else 0
     messages_received = total_messages_in_conversations - messages_sent
     user_data = mongo.db.users.find_one({'email': user_email})
@@ -354,7 +481,7 @@ def logout():
 def dashboard():
     if not IS_DB_AVAILABLE:
         flash('Database connection not available.', 'error')
-        return render_template('dashboard.html', user=session['user'], friends=[], friend_requests=[], all_users=[], user_stats={})
+        return render_template('dashboard.html', user=session.get('user', {}), friends=[], friend_requests=[], all_users=[], user_stats={})
     user = mongo.db.users.find_one({'email': session['user']['email']})
     friends = get_user_friends(session['user']['email'])
     friend_requests = get_friend_requests(session['user']['email'])
@@ -369,13 +496,22 @@ def chat():
     if not room:
         flash('Invalid chat room.', 'error')
         return redirect(url_for('dashboard'))
+
+    # If old email-based room is detected, convert and redirect to username-based room
+    if '@' in room:
+        new_room, migrated = convert_email_room_to_username_room_if_needed(room)
+        # redirect to canonical username-based room
+        return redirect(url_for('chat', room=new_room))
+
+    # If DB not available, just render page with empty messages
     if not IS_DB_AVAILABLE:
         return render_template('chat.html', user=session['user'], messages=[], room=room)
-    mark_messages_as_read(session['user']['email'], room)
-    page = int(request.args.get('page', 1))
-    per_page = 50
-    skip = (page - 1) * per_page
+
     try:
+        mark_messages_as_read(session['user']['email'], room)
+        page = int(request.args.get('page', 1))
+        per_page = 50
+        skip = (page - 1) * per_page
         messages = list(mongo.db.messages.find({'room': room}).sort('timestamp', -1).skip(skip).limit(per_page))
         messages.reverse()
         processed_messages = []
@@ -409,20 +545,49 @@ def chat():
                         else:
                             voice_info[field] = 'unknown'
             processed_messages.append(msg)
+
+        # Participants: if room is private_x-y, extract usernames and lookup user docs
         participants = []
         if room.startswith('private_'):
-            room_emails = room.replace('private_', '').split('-')
-            for email in room_emails:
-                if email != session['user']['email']:
-                    participant = mongo.db.users.find_one({'email': email})
-                    if participant:
-                        participants.append(participant)
+            # get parts after private_
+            try:
+                parts = room[len('private_'):].split('-')
+                # pair should be exactly two tokens: if username contained dash originally it's normalized - ok
+                if len(parts) >= 2:
+                    # we treat whole left and right tokens
+                    left = parts[0]
+                    right = '-'.join(parts[1:])
+                    # find users by matching normalized username -> we stored username unmodified in DB,
+                    # but to find user by normalized value we'll search for username where normalized equals token
+                    # Try exact match first
+                    u1 = mongo.db.users.find_one({'username': left})
+                    u2 = mongo.db.users.find_one({'username': right})
+                    # fallback: try any user whose normalized username matches token
+                    def find_by_normalized(token):
+                        for u in mongo.db.users.find():
+                            if normalize_username_for_room(u.get('username','')) == token:
+                                return u
+                        return None
+                    if not u1:
+                        u1 = find_by_normalized(left)
+                    if not u2:
+                        u2 = find_by_normalized(right)
+                    if u1:
+                        participants.append(u1)
+                    if u2 and (not u1 or u2['email'] != u1.get('email')):
+                        participants.append(u2)
+            except Exception:
+                pass
+
         return render_template('chat.html', user=session['user'], messages=processed_messages, room=room, participants=participants)
     except Exception as e:
         app.logger.error(f"Chat loading error: {e}")
         flash('Error loading chat messages.', 'error')
         return render_template('chat.html', user=session['user'], messages=[], room=room)
-      
+
+# ---------------------------
+# Upload/avatar + file serving
+# ---------------------------
 @app.route('/upload_avatar', methods=['POST'])
 @login_required
 def upload_avatar():
@@ -431,7 +596,6 @@ def upload_avatar():
     file = request.files['avatar']
     if file.filename == '':
         return jsonify({'success': False, 'message': 'Empty filename'}), 400
-    # Optional size/type checks
     try:
         upload_result = cloudinary.uploader.upload(
             file,
@@ -443,45 +607,24 @@ def upload_avatar():
         avatar_url = upload_result.get('secure_url')
         if IS_DB_AVAILABLE and mongo:
             mongo.db.users.update_one({'email': session['user']['email']}, {'$set': {'avatar': avatar_url}})
-        # update session copy so UI reflects change without logout
         session['user']['avatar'] = avatar_url
         return jsonify({'success': True, 'avatar_url': avatar_url})
     except Exception as e:
         app.logger.error(f"Avatar upload error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
-# ------------- Theme API -------------
-@app.route('/api/theme', methods=['POST'])
-@login_required
-def update_theme():
-    if not IS_DB_AVAILABLE:
-        return jsonify({'success': False, 'message': 'Database not available'})
-    data = request.get_json()
-    theme = data.get('theme', 'light')
-    if theme not in ['light', 'dark']:
-        return jsonify({'success': False, 'message': 'Invalid theme'})
-    try:
-        mongo.db.users.update_one({'email': session['user']['email']}, {'$set': {'theme': theme}})
-        app.logger.info(f"✅ Theme updated for {session['user']['email']}: {theme}")
-        return jsonify({'success': True, 'message': 'Theme updated', 'theme': theme})
-    except Exception as e:
-        app.logger.error(f"❌ Theme update error: {e}")
-        return jsonify({'success': False, 'message': 'Update failed'})
 
-# ------------- File upload / serve -------------
 @app.route('/uploads/<path:filename>')
 def serve_file(filename):
     try:
         if '..' in filename or filename.startswith('/'):
             return "Access denied", 403
-
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         if not os.path.exists(file_path):
+            app.logger.debug(f"File not found: {file_path}")
             return "File not found", 404
-
-        # Force correct audio MIME type
         ext = filename.rsplit('.', 1)[-1].lower()
-
         if ext == "webm":
+            # some browsers accept audio/webm for .webm audio
             mime_type = "audio/webm"
         elif ext == "wav":
             mime_type = "audio/wav"
@@ -489,9 +632,7 @@ def serve_file(filename):
             mime_type = "audio/mpeg"
         else:
             mime_type = mimetypes.guess_type(file_path)[0] or 'application/octet-stream'
-
-        return send_file(file_path, mimetype=mime_type)
-
+        return send_file(file_path, mimetype=mime_type, as_attachment=False)
     except Exception as e:
         app.logger.error(f"❌ Error serving file {filename}: {e}")
         return "Server error", 500
@@ -513,37 +654,26 @@ def serve_thumbnail(filename):
 def upload_file():
     if 'file' not in request.files:
         return jsonify({'success': False, 'message': 'No file selected'})
-    
     file = request.files['file']
     room = request.form.get('room')
-
     if file.filename == '':
         return jsonify({'success': False, 'message': 'No file selected'})
-
     if not room:
         return jsonify({'success': False, 'message': 'Room required'})
-
     try:
-        # Upload to Cloudinary
-        upload_result = cloudinary.uploader.upload(
-            file,
-            resource_type="auto"
-        )
-
+        upload_result = cloudinary.uploader.upload(file, resource_type="auto")
         file_url = upload_result.get("secure_url")
         file_type = upload_result.get("resource_type")
         public_id = upload_result.get("public_id")
         file_size = upload_result.get("bytes")
-
-        # FIX: front-end needs file_path, so give both
         file_data = {
             'room': room,
             'author_username': session['user']['username'],
             'author_email': session['user']['email'],
             'message_type': 'file',
             'file_info': {
-                'file_url': file_url,       # original cloudinary URL
-                'file_path': file_url,      # <-- JS expects this key
+                'file_url': file_url,
+                'file_path': file_url,
                 'file_type': file_type,
                 'public_id': public_id,
                 'file_size': file_size
@@ -551,12 +681,8 @@ def upload_file():
             'text': "📎 Shared a file",
             'timestamp': datetime.now(timezone.utc)
         }
-
-        # Save to DB
         if IS_DB_AVAILABLE:
             mongo.db.messages.insert_one(file_data)
-
-        # Emit socket message
         socketio.emit('new_message', {
             'author_username': file_data['author_username'],
             'text': file_data['text'],
@@ -564,13 +690,9 @@ def upload_file():
             'message_type': 'file',
             'file_info': file_data['file_info']
         }, room=room)
-
         return jsonify({'success': True, 'file_info': file_data['file_info']})
-
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
-
-
 
 @app.route('/download/<filename>')
 @login_required
@@ -635,6 +757,9 @@ def on_connect():
         active_users[request.sid] = user_info
         app.logger.info(f"✅ {session['user']['username']} connected (SID: {request.sid})")
         emit('user_status_change', {'email': user_info['email'], 'username': user_info['username'], 'status': 'online'}, broadcast=True)
+    else:
+        # if not authenticated, disconnect socket to avoid anonymous state
+        disconnect()
 
 @socketio.on('disconnect')
 def on_disconnect():
@@ -643,7 +768,6 @@ def on_disconnect():
         user_info = active_users.pop(sid, None)
         if user_info:
             app.logger.info(f"❌ {user_info['username']} disconnected")
-            # clean typing state
             for room in list(typing_users.keys()):
                 typing_users[room].discard(sid)
                 if not typing_users[room]:
@@ -654,6 +778,9 @@ def on_disconnect():
 def on_join_room(data):
     room = data.get('room')
     if room and 'user' in session:
+        # if old email-based room passed through socket, convert
+        if '@' in room:
+            room, _ = convert_email_room_to_username_room_if_needed(room)
         join_room(room)
         user_rooms[request.sid] = room
         app.logger.debug(f"👥 {session['user']['username']} joined room: {room}")
@@ -678,6 +805,9 @@ def on_send_message(data):
     room = data.get('room', '')
     if not message_text or not room:
         return
+    # convert legacy room if present
+    if '@' in room:
+        room, _ = convert_email_room_to_username_room_if_needed(room)
     message_data = {'room': room, 'author_username': session['user']['username'], 'author_email': session['user']['email'], 'text': message_text, 'timestamp': datetime.now(timezone.utc), 'message_type': 'text'}
     if IS_DB_AVAILABLE:
         result = mongo.db.messages.insert_one(message_data)
@@ -749,7 +879,13 @@ def accept_friend():
     sender_email = request.form.get('sender')
     recipient_email = session['user']['email']
     mongo.db.friend_requests.delete_one({'sender': sender_email, 'recipient': recipient_email})
-    room = get_private_room_id(sender_email, recipient_email)
+    # create canonical username-based room
+    sender_user = mongo.db.users.find_one({'email': sender_email})
+    recipient_user = mongo.db.users.find_one({'email': recipient_email})
+    if sender_user and recipient_user:
+        room = get_private_room_id(sender_user.get('username'), recipient_user.get('username'))
+    else:
+        room = get_private_room_id(sender_email, recipient_email)
     mongo.db.friends.insert_one({'user1': sender_email, 'user2': recipient_email, 'room': room, 'created_at': datetime.now(timezone.utc)})
     sender = mongo.db.users.find_one({'email': sender_email})
     sender_name = sender['username'] if sender else 'Unknown user'
@@ -811,7 +947,7 @@ def settings():
     return render_template('settings.html', user=session['user'], userdata=user)
 
 # ---------------------------
-# Cleanup functions (do not start automatically on Render/Gunicorn)
+# Cleanup functions (do not start on Gunicorn)
 # ---------------------------
 def cleanup_old_files():
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
@@ -844,19 +980,15 @@ def cleanup_inactive_sessions():
 
 def enhanced_background_cleanup(stop_event):
     while not stop_event.is_set():
-        # Run hourly
         stop_event.wait(3600)
         try:
             cleanup_inactive_sessions()
-            # daily file cleanup at 2AM local time
             now = datetime.now()
             if now.hour == 2:
                 cleanup_old_files()
         except Exception as e:
             app.logger.debug(f"Background cleanup loop error: {e}")
 
-# We DO NOT start the background thread automatically in production (gunicorn).
-# Start it only in local dev (__main__) so it won't interfere with Gunicorn/eventlet monkey patch.
 _bg_stop_event = None
 _bg_thread = None
 
@@ -936,7 +1068,7 @@ def file_size_filter(size_bytes):
         return '0 B'
 
 # ---------------------------
-# Error handlers (single set)
+# Error handlers
 # ---------------------------
 @app.errorhandler(413)
 def file_too_large(error):
@@ -961,7 +1093,6 @@ if __name__ == '__main__':
     app.logger.info("🚀 Starting Enhanced Messenger App (dev mode)...")
     app.logger.info(f"📊 Database: {'Connected' if IS_DB_AVAILABLE else 'Disabled'}")
     app.logger.info("Starting local background cleanup thread (dev only)")
-    # start background thread only in dev (__main__)
     _bg_stop_event = threading.Event()
     _bg_thread = threading.Thread(target=enhanced_background_cleanup, args=(_bg_stop_event,), daemon=True)
     _bg_thread.start()
@@ -970,9 +1101,3 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
-
-
-
-
-
-
