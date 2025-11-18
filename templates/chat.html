@@ -1,786 +1,350 @@
 {% extends "base.html" %}
 {% block title %}Chat - Enhanced Messenger{% endblock %}
+
 {% block extra_style %}
 <style>
-    
-    .navbar {
-        display: none !important;
-    }
-    
-    :root {
-        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        --success-color: #00d4aa;
-        --danger-color: #ff6b6b;
-    }
-    
-    [data-theme="dark"] {
-        --text-primary: #ffffff;
-        --text-secondary: #cbd5e0;
-        --bg-primary: #1a202c;
-        --bg-secondary: #2d3748;
-        --border-color: #4a5568;
-    }
-    
-    [data-theme="festive"] {
-        --primary-gradient: linear-gradient(135deg, #ff0000 0%, #00ff00 100%);
-    }
-    
-    [data-theme="ocean"] {
-        --primary-gradient: linear-gradient(135deg, #1e3a8a 0%, #0ea5e9 100%);
-    }
-    
-    [data-theme="sunset"] {
-        --primary-gradient: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
-    }
-    
-    [data-theme="dark"] body {
-        background: linear-gradient(-45deg, #2d3748, #4a5568, #553c9a, #6b46c1) !important;
-    }
-    
-    .festive-snow {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 9999;
-    }
-    
-    .snowflake {
-        position: absolute;
-        color: white;
-        animation: fall linear infinite;
-    }
-    
-    @keyframes fall {
-        to { transform: translateY(100vh) rotate(360deg); }
-    }
-    
-    .chat-container {
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        background: rgba(255, 255, 255, 0.95);
-    }
-    
-    [data-theme="dark"] .chat-container {
-        background: rgba(45, 55, 72, 0.95);
-    }
-    
-    .chat-header {
-        background: rgba(255, 255, 255, 0.98);
-        border-bottom: 1px solid #e2e8f0;
-        padding: 1rem 2rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    [data-theme="dark"] .chat-header {
-        background: rgba(45, 55, 72, 0.98);
-        border-bottom-color: #4a5568;
-    }
-    
-    .back-btn {
-        background: var(--accent-gradient);
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        text-decoration: none;
-        transition: transform 0.3s;
-    }
-    
-    .back-btn:hover {
-        transform: scale(1.1);
-        color: white;
-    }
-    
-    .theme-selector {
-        display: flex;
-        gap: 0.5rem;
-    }
-    
-    .theme-btn {
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        border: 2px solid white;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s;
-    }
-    
-    .theme-btn:hover {
-        transform: scale(1.1);
-    }
-    
-    .theme-btn.active {
-        border-width: 3px;
-        box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
-    }
-    
-    .theme-btn.light { background: linear-gradient(135deg, #f8fafc, #e2e8f0); }
-    .theme-btn.dark { background: linear-gradient(135deg, #2d3748, #1a202c); }
-    .theme-btn.festive { background: linear-gradient(135deg, #ff0000, #00ff00); }
-    .theme-btn.ocean { background: linear-gradient(135deg, #0369a1, #06b6d4); }
-    .theme-btn.sunset { background: linear-gradient(135deg, #fb923c, #f59e0b); }
-    
-    .messages-container {
-        flex: 1;
-        padding: 1rem 2rem;
-        overflow-y: auto;
-        scroll-behavior: smooth;
-    }
-    
-    .message {
-        display: flex;
-        margin-bottom: 1.5rem;
-        animation: slideIn 0.4s ease-out;
-    }
-    
-    @keyframes slideIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .message.own {
-        justify-content: flex-end;
-    }
-    
-    .message-bubble {
-        max-width: 70%;
-        padding: 1rem 1.5rem;
-        border-radius: 20px;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-    
-    .message:not(.own) .message-bubble {
-        background: rgba(255, 255, 255, 0.95);
-        border-bottom-left-radius: 8px;
-        color: #2c3e50;
-        border: 1px solid #e2e8f0;
-    }
-    
-    [data-theme="dark"] .message:not(.own) .message-bubble {
-        background: rgba(45, 55, 72, 0.95);
-        color: white;
-        border-color: #4a5568;
-    }
-    
-    .message.own .message-bubble {
-        background: var(--primary-gradient);
-        color: white;
-        border-bottom-right-radius: 8px;
-    }
-    
-    .message-author {
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-        font-size: 0.9rem;
-    }
-    
-    .audio-player {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        margin: 0.5rem 0;
-        min-width: 300px;
-    }
-    
-    .audio-play-btn {
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
-        background: var(--accent-gradient);
-        border: none;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: transform 0.3s;
-    }
-    
-    .audio-play-btn:hover {
-        transform: scale(1.1);
-    }
-    
-    .audio-progress {
-        height: 4px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 2px;
-        cursor: pointer;
-        flex: 1;
-    }
-    
-    .audio-progress-bar {
-        height: 100%;
-        background: white;
-        border-radius: 2px;
-        width: 0%;
-    }
-    
-    .audio-time {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.75rem;
-        margin-top: 0.25rem;
-    }
-    
-    .image-message {
-        max-width: 400px;
-        border-radius: 12px;
-        overflow: hidden;
-        cursor: pointer;
-        margin: 0.5rem 0;
-    }
-    
-    .image-message img {
-        width: 100%;
-        height: auto;
-        display: block;
-    }
-    
-    .file-message {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        margin: 0.5rem 0;
-    }
-    
-    .file-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 12px;
-        background: var(--accent-gradient);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.5rem;
-    }
-    
-    .input-area {
-        padding: 1.5rem 2rem;
-        background: rgba(255, 255, 255, 0.98);
-        border-top: 1px solid #e2e8f0;
-        display: flex;
-        align-items: end;
-        gap: 1rem;
-    }
-    
-    [data-theme="dark"] .input-area {
-        background: rgba(45, 55, 72, 0.98);
-        border-top-color: #4a5568;
-    }
-    
-    .message-input {
-        flex: 1;
-        padding: 1rem 1.5rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 25px;
-        background: #f8fafc;
-        color: #2c3e50;
-        font-size: 1rem;
-        resize: none;
-        max-height: 120px;
-        outline: none;
-    }
-    
-    [data-theme="dark"] .message-input {
-        background: #2d3748;
-        color: white;
-        border-color: #4a5568;
-    }
-    
-    .message-input:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-    }
-    
-    .action-btn {
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.1rem;
-        transition: all 0.3s;
-    }
-    
-    .file-btn {
-        background: var(--secondary-gradient);
-        color: white;
-    }
-    
-    .voice-btn {
-        background: var(--accent-gradient);
-        color: white;
-    }
-    
-    .voice-btn.recording {
-        background: #ff6b6b;
-        animation: pulse 1.5s infinite;
-    }
-    
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(255, 107, 107, 0.5); }
-    }
-    
-    .send-btn {
-        background: var(--primary-gradient);
-        color: white;
-    }
-    
-    .action-btn:hover {
-        transform: scale(1.1);
-    }
-    
-    .voice-recording-panel {
-        position: fixed;
-        bottom: 120px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(255, 255, 255, 0.98);
-        backdrop-filter: blur(20px);
-        padding: 1.5rem 2rem;
-        border-radius: 25px;
-        display: none;
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-        z-index: 1000;
-        min-width: 350px;
-    }
-    
-    [data-theme="dark"] .voice-recording-panel {
-        background: rgba(45, 55, 72, 0.98);
-    }
-    
-    .voice-recording-panel.active {
-        display: flex;
-    }
-    
-    .recording-visualizer {
-        display: flex;
-        gap: 3px;
-        height: 40px;
-        align-items: center;
-    }
-    
-    .recording-bar {
-        width: 3px;
-        background: var(--accent-gradient);
-        border-radius: 2px;
-        animation: visualize 0.5s ease-in-out infinite;
-    }
-    
-    .recording-bar:nth-child(2) { animation-delay: 0.1s; }
-    .recording-bar:nth-child(3) { animation-delay: 0.2s; }
-    .recording-bar:nth-child(4) { animation-delay: 0.3s; }
-    .recording-bar:nth-child(5) { animation-delay: 0.4s; }
-    
-    @keyframes visualize {
-        0%, 100% { height: 10px; }
-        50% { height: 40px; }
-    }
-    
-    .recording-time {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #2c3e50;
-    }
-    
-    [data-theme="dark"] .recording-time {
-        color: white;
-    }
-    
-    .recording-controls {
-        display: flex;
-        gap: 1rem;
-    }
-    
-    .recording-control-btn {
-        padding: 0.75rem 1.5rem;
-        border-radius: 20px;
-        border: none;
-        font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.3s;
-    }
-    
-    .recording-control-btn:hover {
-        transform: translateY(-2px);
-    }
-    
-    .recording-control-btn.cancel {
-        background: rgba(255, 107, 107, 0.2);
-        color: #ff6b6b;
-    }
-    
-    .recording-control-btn.send {
-        background: #00d4aa;
-        color: white;
-    }
-    
-    .file-input {
-        display: none;
-    }
-    
-    @media (max-width: 768px) {
-        .theme-selector {
-            display: none;
-        }
-        .message-bubble {
-            max-width: 85%;
-        }
-    }
-    .chat-header {
-    height: 70px;
-}
+/* ---------- Layout ---------- */
+:root{ --primary:#667eea; --accent:#4facfe; --success:#00d4aa; --danger:#ff6b6b; }
+*{box-sizing:border-box}
+body{font-family:Inter, system-ui, Arial; margin:0}
+.navbar{display:none!important}
+.chat-container{height:100vh;display:flex;flex-direction:column;background:var(--bg,linear-gradient(180deg,#fbfbfd,#f5f3f8));}
+.chat-header{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid rgba(0,0,0,0.06);}
+.header-left{display:flex;gap:16px;align-items:center}
+.back-btn{width:44px;height:44px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;text-decoration:none}
+.room-title{font-size:1.15rem;font-weight:600}
+.header-right{display:flex;align-items:center;gap:10px}
+.theme-selector{display:flex;gap:8px}
+.theme-btn{width:36px;height:36px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,0.7)}
+.theme-btn.light{background:linear-gradient(135deg,#f8fafc,#e2e8f0)}
+.theme-btn.dark{background:linear-gradient(135deg,#2d3748,#1a202c)}
+.theme-btn.festive{background:linear-gradient(135deg,#ff5f6d,#ffc371)}
+.theme-btn.ocean{background:linear-gradient(135deg,#0369a1,#06b6d4)}
+.theme-btn.sunset{background:linear-gradient(135deg,#fb923c,#f97316)}
 
+/* messages area */
+.messages-wrap{flex:1;overflow:auto;padding:24px 40px;position:relative}
+.messages{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.message{display:flex;align-items:flex-end}
+.message.own{justify-content:flex-end}
+.message-bubble{background:rgba(255,255,255,0.95);padding:14px;border-radius:14px;box-shadow:0 8px 20px rgba(14,20,30,0.06);max-width:60%;position:relative}
+.message.own .message-bubble{background:linear-gradient(135deg,var(--primary),#8e6bd6);color:#fff}
+.message-meta{font-size:0.75rem;color:rgba(0,0,0,0.45);margin-top:8px}
+.message-author{font-weight:700;margin-bottom:6px}
+.message-options{position:absolute;top:8px;right:8px;display:flex;gap:6px}
+.option-btn{background:transparent;border:none;cursor:pointer;color:rgba(0,0,0,0.45)}
+.checkbox-select{position:absolute;left:-46px;top:10px}
+
+/* file / image styles */
+.image-message img{max-width:420px;border-radius:12px;display:block}
+.file-message{display:flex;align-items:center;gap:12px}
+.file-icon{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ffd1dc,#ff9a9e);color:#fff}
+
+/* audio player */
+.audio-player{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:12px;background:rgba(0,0,0,0.03);min-width:260px}
+.audio-play-btn{width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;background:var(--accent);color:#fff}
+.audio-progress{height:6px;background:rgba(0,0,0,0.06);border-radius:6px;flex:1;position:relative;cursor:pointer}
+.audio-progress-bar{height:100%;width:0%;background:var(--primary);border-radius:6px}
+
+/* input area */
+.input-area{padding:18px 24px;border-top:1px solid rgba(0,0,0,0.06);display:flex;gap:12px;align-items:center}
+.message-input{flex:1;padding:14px 18px;border-radius:30px;border:2px solid rgba(0,0,0,0.06);outline:none;font-size:1rem}
+.action-btn{width:48px;height:48px;border-radius:50%;border:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.file-btn{background:linear-gradient(135deg,#ffb199,#ff8a8a);color:#fff}
+.voice-btn{background:linear-gradient(135deg,#6ad3ff,#4facfe);color:#fff}
+.send-btn{background:linear-gradient(135deg,#6f8cff,#7f5af0);color:#fff}
+.bulk-actions{display:flex;gap:10px;align-items:center;margin-right:12px}
+.bulk-delete{background:var(--danger);color:#fff;border:none;padding:8px 12px;border-radius:10px;cursor:pointer}
+.clear-chat{background:#e2e8f0;border:none;padding:8px 12px;border-radius:10px;cursor:pointer}
+
+/* small responsive */
+@media(max-width:900px){.messages{padding:0 12px}.message-bubble{max-width:85%}}
+
+/* themes (will be toggled with data-theme on body) */
+body[data-theme='dark']{--bg:linear-gradient(180deg,#0f1724,#1f2937);background:var(--bg);color:#e6eef8}
+body[data-theme='dark'] .message-bubble{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.03)}
+body[data-theme='festive']{--primary:#ff6b6b}
+body[data-theme='ocean']{--primary:#06b6d4}
+body[data-theme='sunset']{--primary:#fb923c}
+
+/* small utilities */
+.hidden{display:none}
+.center-abs{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+.menu{position:absolute;background:#fff;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.12);padding:8px;z-index:50}
+.menu button{display:block;border:none;background:transparent;padding:8px 12px;width:100%;text-align:left;cursor:pointer}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="chat-container" data-room="{{ room }}">
   <div class="chat-header">
-    <div style="display:flex; align-items:center; gap:1rem;">
-      <a href="{{ url_for('dashboard') }}" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    <div class="header-left">
+      <a class="back-btn" href="{{ url_for('dashboard') }}"><i class="fas fa-arrow-left"></i></a>
       <div>
-        <h4 style="margin:0;">{{ room }}</h4>
-        <p id="status" style="margin:0; font-size:0.9rem; opacity:0.8;">Connected</p>
+        <div class="room-title">{{ room }}</div>
+        <div id="status" style="font-size:0.85rem;color:rgba(0,0,0,0.45)">Connected</div>
       </div>
     </div>
-    <!-- theme buttons etc (omitted here for brevity) -->
+
+    <div class="header-right">
+      <div class="bulk-actions">
+        <button id="selectAllBtn" class="clear-chat">Select All</button>
+        <button id="bulkDeleteBtn" class="bulk-delete" disabled>Delete Selected</button>
+        <button id="clearChatBtn" class="clear-chat">Clear Chat</button>
+      </div>
+
+      <div class="theme-selector" role="tablist" aria-label="Theme selector">
+        <div class="theme-btn light" title="Light" onclick="setTheme('light')"></div>
+        <div class="theme-btn dark" title="Dark" onclick="setTheme('dark')"></div>
+        <div class="theme-btn festive" title="Festive" onclick="setTheme('festive')"></div>
+        <div class="theme-btn ocean" title="Ocean" onclick="setTheme('ocean')"></div>
+        <div class="theme-btn sunset" title="Sunset" onclick="setTheme('sunset')"></div>
+      </div>
+    </div>
   </div>
 
-  <div id="messagesContainer" class="messages-container" aria-live="polite" role="log">
-    {% for msg in messages %}
-      <div class="message {{ 'own' if msg.author_username == user.username else '' }}">
+  <div class="messages-wrap" id="messagesWrap">
+    <div class="messages" id="messages">
+      {% for msg in messages %}
+      <div class="message {% if msg.author_username == user.username %}own{% endif %}" data-id="{{ msg.id }}" data-author="{{ msg.author_username }}">
+        <input type="checkbox" class="checkbox-select" aria-label="Select message">
         <div class="message-bubble">
-          {% if msg.author_username != user.username %}
-            <div class="message-author">{{ msg.author_username }}</div>
-          {% endif %}
-          {% if msg.get('message_type') == 'voice' and msg.get('voice_info') %}
-            <div class="audio-player" data-audio-id="audio_{{ loop.index }}">
-              <button class="audio-play-btn" onclick="toggleAudio('audio_{{ loop.index }}','{{ msg.voice_info.file_path }}')"><i class="fas fa-play"></i></button>
-              <div style="flex:1;">
-                <div class="audio-progress" onclick="seekAudio(event,'audio_{{ loop.index }}')">
-                  <div class="audio-progress-bar" id="audio_{{ loop.index }}_progress"></div>
-                </div>
-                <div class="audio-time"><span id="audio_{{ loop.index }}_current">0:00</span><span>{{ "%.1f"|format(msg.voice_info.duration|float) }}s</span></div>
+          <div class="message-author">{% if msg.author_username != user.username %}{{ msg.author_username }}{% else %}You{% endif %}</div>
+
+          {% if msg.message_type == 'file' and msg.file_info.file_type == 'image' %}
+            <div class="image-message"><img src="{{ msg.file_info.file_path }}" alt="{{ msg.file_info.original_name }}"></div>
+          {% elif msg.message_type == 'file' %}
+            <div class="file-message">
+              <div class="file-icon"><i class="fas fa-file"></i></div>
+              <div>
+                <div style="font-weight:700">{{ msg.file_info.original_name }}</div>
+                <div style="font-size:0.85rem;color:rgba(0,0,0,0.6)">{{ msg.file_info.file_size|file_size }}</div>
               </div>
             </div>
-          {% elif msg.get('message_type') == 'file' and msg.get('file_info') %}
-            {% if msg.file_info.file_type == 'image' %}
-              <div class="image-message"><img src="{{ msg.file_info.file_path }}" alt="{{ msg.file_info.original_name }}"></div>
-            {% else %}
-              <div class="file-message">
-                <div style="flex:1;">
-                  <div style="font-weight:600;">{{ msg.file_info.original_name }}</div>
-                  <div style="font-size:0.8rem; opacity:0.8;">{{ msg.file_info.file_size|file_size }}</div>
-                </div>
-                <a href="{{ msg.file_info.file_path }}" download><i class="fas fa-download"></i></a>
+          {% elif msg.message_type == 'voice' %}
+            <div class="audio-player" data-audio-id="audio_{{ loop.index }}">
+              <button class="audio-play-btn" onclick="toggleAudio('audio_{{ loop.index }}','{{ msg.voice_info.file_path }}')"><i class="fas fa-play"></i></button>
+              <div style="flex:1">
+                <div class="audio-progress" onclick="seekAudio(event,'audio_{{ loop.index }}')"><div class="audio-progress-bar" id="audio_{{ loop.index }}_progress"></div></div>
+                <div class="audio-time"><span id="audio_{{ loop.index }}_current">0:00</span> <small style="opacity:0.6">{{ "%.1f"|format(msg.voice_info.duration|float) }}s</small></div>
               </div>
-            {% endif %}
+            </div>
           {% else %}
-            <div>{{ msg.text }}</div>
+            <div class="message-text">{{ msg.text }}</div>
           {% endif %}
-          <div style="font-size:0.75rem; opacity:0.7; margin-top:0.5rem;">{{ msg.timestamp|format_time }}</div>
+
+          <div class="message-meta">{{ msg.timestamp|format_time }}
+            <span style="margin-left:8px;opacity:0.6">{% if msg.read %}✓✓{% elif msg.delivered %}✓{% endif %}</span>
+          </div>
+
+          <div class="message-options">
+            <button class="option-btn" onclick="openMenu(event, '{{ msg.id }}')"><i class="fas fa-ellipsis-h"></i></button>
+          </div>
         </div>
       </div>
-    {% endfor %}
+      {% endfor %}
+    </div>
   </div>
 
   <div class="input-area">
-    <textarea id="messageInput" class="message-input" rows="1" placeholder="Type your message..."></textarea>
-    <input id="fileInput" type="file" class="file-input" accept="image/*,video/*,.pdf,.doc,.docx" />
-    <div style="display:flex; gap:0.5rem;">
-      <button class="action-btn file-btn" onclick="document.getElementById('fileInput').click()"><i class="fas fa-paperclip"></i></button>
-      <button id="voiceBtn" class="action-btn voice-btn" onclick="toggleRecording()"><i class="fas fa-microphone"></i></button>
-      <button class="action-btn send-btn" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+    <input id="messageInput" class="message-input" placeholder="Type your message...">
+    <input id="fileInput" class="hidden" type="file" accept="image/*,video/*,.pdf,.doc,.docx">
+    <button class="action-btn file-btn" onclick="document.getElementById('fileInput').click()"><i class="fas fa-paperclip"></i></button>
+    <button id="voiceBtn" class="action-btn voice-btn" onclick="toggleRecording()"><i class="fas fa-microphone"></i></button>
+    <button id="sendBtn" class="action-btn send-btn" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+  </div>
+
+  <!-- floating menu template -->
+  <div id="floatingMenu" class="menu hidden" role="menu" aria-hidden="true"></div>
+
+  <!-- voice recording panel -->
+  <div id="voicePanel" class="voice-recording-panel hidden center-abs" aria-hidden="true">
+    <div class="recording-visualizer">
+      <div class="recording-bar"></div><div class="recording-bar"></div><div class="recording-bar"></div><div class="recording-bar"></div>
+    </div>
+    <div class="recording-time" id="recordTime">0:00</div>
+    <div class="recording-controls">
+      <button class="recording-control-btn cancel" onclick="cancelRecording()">Cancel</button>
+      <button class="recording-control-btn send" onclick="sendVoice()">Send</button>
     </div>
   </div>
 </div>
 
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<script>
-/* ---------- Config / state ---------- */
-const socket = io();
-const currentRoom = "{{ room }}";
-const currentUser = "{{ user.username }}";
-const messagesContainer = document.getElementById('messagesContainer');
-const messageInput = document.getElementById('messageInput');
-
-let isRecording = false, mediaRecorder = null, audioChunks = [], recordingStart = 0;
-const audioPlayers = new Map();
-
-/* ---------- Helpers ---------- */
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-function formatDuration(seconds) {
-  if (!seconds || isNaN(seconds)) return '0:00';
-  const m = Math.floor(seconds/60), s = Math.floor(seconds%60);
-  return `${m}:${String(s).padStart(2,'0')}`;
-}
-function isAtBottom(container, threshold = 30) {
-  return container.scrollTop + container.clientHeight >= container.scrollHeight - threshold;
-}
-function scrollToBottom() {
-  setTimeout(()=> { messagesContainer.scrollTop = messagesContainer.scrollHeight; }, 50);
-}
-
-/* ---------- Socket events ---------- */
-socket.on('connect', () => {
-  console.log('socket connected');
-  document.getElementById('status').textContent = 'Connected';
-  // join room and then mark read
-  socket.emit('join_room', { room: currentRoom });
-  setTimeout(() => emitMarkRead(), 700);
-});
-
-socket.on('disconnect', () => {
-  document.getElementById('status').textContent = 'Reconnecting...';
-});
-
-socket.on('new_message', (data) => {
-  // append message to DOM
-  appendMessage(data);
-  const atBottom = isAtBottom(messagesContainer);
-  if (atBottom && data.author_username !== currentUser) {
-    // user is viewing latest — mark as read shortly after render
-    setTimeout(()=> emitMarkRead(), 300);
-  }
-  if (atBottom) scrollToBottom();
-});
-
-socket.on('unread_update', (data) => {
-  // data: { room: 'private_x-y', unread_count: N }
-  // find the badge in dashboard (if present) and update visibility
-  try {
-    const selector = `.unread-badge[data-room="${data.room}"]`;
-    const badge = document.querySelector(selector);
-    if (badge) {
-      if (!data.unread_count || data.unread_count === 0) {
-        badge.style.display = 'none';
-      } else {
-        badge.style.display = 'inline-block';
-        badge.textContent = String(data.unread_count > 99 ? '99+' : data.unread_count);
-      }
-    }
-  } catch (e) {
-    console.error('unread_update handler error', e);
-  }
-});
-
-/* ---------- Messaging: append / send ---------- */
-function appendMessage(data) {
-  const div = document.createElement('div');
-  div.className = 'message ' + (data.author_username === currentUser ? 'own' : '');
-  const bubble = document.createElement('div');
-  bubble.className = 'message-bubble';
-
-  if (data.author_username !== currentUser) {
-    const author = document.createElement('div');
-    author.className = 'message-author';
-    author.innerText = data.author_username;
-    bubble.appendChild(author);
-  }
-
-  if (data.message_type === 'voice' && data.voice_info) {
-    const audioId = 'audio_' + Date.now();
-    bubble.innerHTML += `
-      <div class="audio-player" data-audio-id="${audioId}">
-        <button class="audio-play-btn" onclick="toggleAudio('${audioId}', '${escapeHtml(data.voice_info.file_path)}')"><i class="fas fa-play"></i></button>
-        <div style="flex:1;">
-          <div class="audio-progress" onclick="seekAudio(event,'${audioId}')"><div class="audio-progress-bar" id="${audioId}_progress"></div></div>
-          <div class="audio-time"><span id="${audioId}_current">0:00</span><span>${formatDuration(data.voice_info.duration)}</span></div>
-        </div>
-      </div>
-    `;
-  } else if (data.message_type === 'file' && data.file_info) {
-    if (data.file_info.file_type === 'image') {
-      bubble.innerHTML += `<div class="image-message"><img src="${escapeHtml(data.file_info.file_path)}" alt="${escapeHtml(data.file_info.original_name)}"></div>`;
-    } else {
-      bubble.innerHTML += `<div class="file-message"><div style="flex:1;"><div style="font-weight:600;">${escapeHtml(data.file_info.original_name || 'file')}</div></div><a href="${escapeHtml(data.file_info.file_path)}" download><i class="fas fa-download"></i></a></div>`;
-    }
-  } else {
-    bubble.innerHTML += `<div>${escapeHtml(data.text || '')}</div>`;
-  }
-
-  const ts = document.createElement('div');
-  ts.style.fontSize = '0.75rem';
-  ts.style.opacity = '0.7';
-  ts.style.marginTop = '0.5rem';
-  try {
-    const t = data.timestamp ? new Date(data.timestamp) : new Date();
-    ts.innerText = t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  } catch {
-    ts.innerText = '';
-  }
-  bubble.appendChild(ts);
-  div.appendChild(bubble);
-  messagesContainer.appendChild(div);
-}
-
-/* send message */
-function sendMessage() {
-  const text = messageInput.value.trim();
-  if (!text) return;
-  socket.emit('send_message', { message: text, room: currentRoom });
-  messageInput.value = '';
-  // optimistic UI (optional): will also arrive via socket 'new_message'
-}
-
-/* file upload */
-document.getElementById('fileInput').addEventListener('change', function (e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const fd = new FormData();
-  fd.append('file', file);
-  fd.append('room', currentRoom);
-  fetch('/upload', { method:'POST', body: fd })
-    .then(r => r.json())
-    .then(res => {
-      if (!res.success) alert('Upload failed: ' + (res.message || ''));
-    })
-    .catch(err => { console.error('upload error', err); alert('Upload failed'); })
-    .finally(() => { e.target.value = ''; });
-});
-
-/* ---------- mark read logic ---------- */
-function emitMarkRead() {
-  if (!currentRoom) return;
-  console.log('emit mark_read for', currentRoom);
-  socket.emit('mark_read', { room: currentRoom });
-}
-
-/* mark read on scroll when user reaches bottom */
-let scrollTimeout = null;
-messagesContainer.addEventListener('scroll', () => {
-  if (scrollTimeout) clearTimeout(scrollTimeout);
-  scrollTimeout = setTimeout(() => {
-    if (isAtBottom(messagesContainer, 20)) emitMarkRead();
-  }, 150);
-});
-
-/* when page loads, mark read after small delay (to allow join_room -> server) */
-window.addEventListener('load', () => setTimeout(() => emitMarkRead(), 800));
-
-/* ---------- audio playback helpers ---------- */
-function createAudioPlayer(audioId, url) {
-  if (audioPlayers.has(audioId)) return audioPlayers.get(audioId);
-  try {
-    const audio = new Audio(url);
-    const progressBar = document.getElementById(audioId + '_progress');
-    const currentTime = document.getElementById(audioId + '_current');
-    audio.addEventListener('timeupdate', () => {
-      if (audio.duration && progressBar) progressBar.style.width = (audio.currentTime / audio.duration * 100) + '%';
-      if (currentTime) currentTime.textContent = formatDuration(audio.currentTime);
-    });
-    audio.addEventListener('ended', () => updatePlayButton(audioId, false));
-    audio.addEventListener('error', (e) => { console.error('audio error', e); updatePlayButton(audioId, false); });
-    audioPlayers.set(audioId, { audio, progressBar, currentTime });
-    return audioPlayers.get(audioId);
-  } catch(e) {
-    console.error('createAudioPlayer error', e);
-    return null;
-  }
-}
-function toggleAudio(audioId, url) {
-  const p = audioPlayers.get(audioId);
-  if (p && !p.audio.paused) {
-    p.audio.pause();
-    updatePlayButton(audioId, false);
-    return;
-  }
-  // pause all others
-  audioPlayers.forEach((obj, id) => {
-    if (!obj.audio.paused) { obj.audio.pause(); updatePlayButton(id, false); }
-  });
-  const player = createAudioPlayer(audioId, url);
-  if (player) {
-    player.audio.play().then(()=> updatePlayButton(audioId, true)).catch(e=> { console.error(e); alert('Playback failed'); });
-  }
-}
-function updatePlayButton(audioId, isPlaying) {
-  const node = document.querySelector(`[data-audio-id="${audioId}"] .audio-play-btn`);
-  if (node) node.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
-}
-function seekAudio(e, audioId) {
-  const p = audioPlayers.get(audioId);
-  if (!p || !p.audio.duration) return;
-  const rect = e.currentTarget.getBoundingClientRect();
-  const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-  p.audio.currentTime = percent * p.audio.duration;
-}
-
-/* ---------- recording (kept simple) ---------- */
-async function toggleRecording() {
-  if (!isRecording) {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:true, noiseSuppression:true } });
-      mediaRecorder = new MediaRecorder(stream);
-      audioChunks = [];
-      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-      mediaRecorder.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop());
-        const blob = new Blob(audioChunks, { type: 'audio/webm' });
-        const duration = Math.floor((Date.now() - recordingStart) / 1000);
-        const fd = new FormData();
-        fd.append('audio', blob, 'voice.webm');
-        fd.append('room', currentRoom);
-        fd.append('duration', duration);
-        fetch('/upload_voice', { method:'POST', body: fd })
-          .then(r => r.json()).then(res => { if (!res.success) alert('Voice upload failed'); })
-          .catch(err => { console.error(err); alert('Voice upload failed'); });
-      };
-      mediaRecorder.start();
-      isRecording = true; recordingStart = Date.now();
-      document.getElementById('voiceBtn').classList.add('recording');
-    } catch (e) {
-      console.error('mic error', e); alert('Microphone access denied');
-    }
-  } else {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-    isRecording = false;
-    document.getElementById('voiceBtn').classList.remove('recording');
-  }
-}
-
-window.addEventListener('beforeunload', () => {
-  audioPlayers.forEach(p => { try { p.audio.pause(); } catch {} });
-  if (isRecording && mediaRecorder) mediaRecorder.stop();
-});
-</script>
 {% endblock %}
 
+{% block scripts %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+// ---------- State ----------
+const socket = io();
+const room = "{{ room }}";
+const currentUser = "{{ user.username }}";
+const messagesEl = document.getElementById('messages');
+const messagesWrap = document.getElementById('messagesWrap');
+const floatingMenu = document.getElementById('floatingMenu');
+let selectedMessages = new Set();
+let recordingState = {active:false,media:null, chunks:[], start:0};
+const audioPlayers = new Map();
 
+// ---------- Theme ----------
+function setTheme(t){
+  document.body.setAttribute('data-theme', t);
+  localStorage.setItem('chat_theme', t);
+  // mark active border for visual (optional) - simple approach
+  document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));
+}
+(function initTheme(){ const t = localStorage.getItem('chat_theme') || 'light'; setTheme(t); })();
 
+// ---------- Socket events ----------
+socket.on('connect', ()=>{ console.log('connected'); socket.emit('join_room',{room}); document.getElementById('status').innerText='Connected'; setTimeout(()=>markRead(),600); });
+socket.on('disconnect', ()=>{ document.getElementById('status').innerText='Reconnecting...'; });
+
+socket.on('new_message', data => { appendMessageToDOM(data, true); if(isAtBottom()) scrollToBottom(); if(data.author_username !== currentUser && isAtBottom()) setTimeout(()=>markRead(),300); });
+
+socket.on('message_deleted', data => { // data: {id}
+  const node = messagesEl.querySelector(`[data-id="${data.id}"]`);
+  if(node) { node.querySelector('.message-text')?.replaceWith(createDeletedNode()); node.classList.add('deleted'); }
+});
+
+socket.on('message_edited', data => { const node = messagesEl.querySelector(`[data-id="${data.id}"]`); if(node) node.querySelector('.message-text').innerText = data.text; });
+
+socket.on('unread_update', data => { // update dashboard badges (if present)
+  const badge = document.querySelector(`.unread-badge[data-room="${data.room}"]`);
+  if(badge){ if(!data.unread_count) badge.style.display='none'; else { badge.style.display='inline-block'; badge.innerText = data.unread_count>99?'99+':data.unread_count; } }
+});
+
+socket.on('typing', data => { // {room, user}
+  // simple typing indicator near header
+  const st = document.getElementById('status'); if(data.is_typing) st.innerText = data.user + ' is typing...'; else st.innerText = 'Connected';
+});
+
+// ---------- Helpers ----------
+function isAtBottom(){ const c = messagesWrap; return c.scrollTop + c.clientHeight >= c.scrollHeight - 80; }
+function scrollToBottom(){ messagesWrap.scrollTop = messagesWrap.scrollHeight; }
+function createDeletedNode(){ const d = document.createElement('div'); d.className='message-text'; d.innerText='This message was deleted'; d.style.fontStyle='italic'; d.style.opacity='0.7'; return d; }
+
+function appendMessageToDOM(data, fromSocket=false){
+  // build DOM similarly to Jinja output, but for new messages
+  const wrapper = document.createElement('div'); wrapper.className = 'message ' + (data.author_username==currentUser?'own':''); wrapper.setAttribute('data-id', data.id); wrapper.setAttribute('data-author', data.author_username);
+
+  const chk = document.createElement('input'); chk.type='checkbox'; chk.className='checkbox-select'; chk.addEventListener('change', onSelectChange);
+  wrapper.appendChild(chk);
+
+  const bubble = document.createElement('div'); bubble.className='message-bubble';
+  const author = document.createElement('div'); author.className='message-author'; author.innerText = data.author_username==currentUser?'You':data.author_username; bubble.appendChild(author);
+
+  if(data.message_type==='file' && data.file_info?.file_type==='image'){
+    const imgWrap=document.createElement('div'); imgWrap.className='image-message'; const img=document.createElement('img'); img.src=data.file_info.file_path; imgWrap.appendChild(img); bubble.appendChild(imgWrap);
+  } else if(data.message_type==='file'){
+    const fileBox=document.createElement('div'); fileBox.className='file-message'; fileBox.innerHTML = `<div class="file-icon"><i class="fas fa-file"></i></div><div><div style=\"font-weight:700\">${escapeHtml(data.file_info.original_name)}</div></div>`; bubble.appendChild(fileBox);
+  } else if(data.message_type==='voice'){
+    const audioId = 'audio_' + Date.now(); bubble.innerHTML += `<div class="audio-player" data-audio-id="${audioId}"><button class="audio-play-btn" onclick="toggleAudio('${audioId}','${data.voice_info.file_path}')"><i class=\"fas fa-play\"></i></button><div style=\"flex:1\"><div class=\"audio-progress\" onclick=\"seekAudio(event,'${audioId}')\"><div class=\"audio-progress-bar\" id=\"${audioId}_progress\"></div></div><div class=\"audio-time\"><span id=\"${audioId}_current\">0:00</span> <small style=\"opacity:0.6\">${formatDuration(data.voice_info.duration)}</small></div></div></div>`;
+  } else {
+    const txt = document.createElement('div'); txt.className='message-text'; txt.innerText = data.text || ''; bubble.appendChild(txt);
+  }
+
+  const meta = document.createElement('div'); meta.className='message-meta'; meta.innerText = (new Date(data.timestamp||Date.now())).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  bubble.appendChild(meta);
+
+  const opts = document.createElement('div'); opts.className='message-options'; opts.innerHTML = `<button class="option-btn" onclick="openMenu(event,'${data.id}')"><i class=\"fas fa-ellipsis-h\"></i></button>`;
+  bubble.appendChild(opts);
+  wrapper.appendChild(bubble);
+  messagesEl.appendChild(wrapper);
+  if(fromSocket) {
+    // if message by other user while user not at bottom, show unread badge via server
+  }
+}
+
+function escapeHtml(str){ if(!str) return ''; return String(str).replace(/[&<>"']/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[s])); }
+function formatDuration(s){ s = Math.floor(s||0); const m=Math.floor(s/60); const sec = String(s%60).padStart(2,'0'); return `${m}:${sec}`; }
+
+// ---------- Select & Bulk delete ----------
+function onSelectChange(e){ const wrapper = e.target.closest('.message'); const id = wrapper.getAttribute('data-id'); if(e.target.checked) selectedMessages.add(id); else selectedMessages.delete(id); document.getElementById('bulkDeleteBtn').disabled = selectedMessages.size===0; }
+
+document.getElementById('selectAllBtn').addEventListener('click', ()=>{
+  const all = Array.from(document.querySelectorAll('.checkbox-select')); const select = all.some(a=>!a.checked);
+  all.forEach(a=>{ a.checked = select; a.dispatchEvent(new Event('change')) });
+});
+
+document.getElementById('bulkDeleteBtn').addEventListener('click', async ()=>{
+  if(!confirm('Delete selected messages?')) return;
+  const ids = Array.from(selectedMessages);
+  // request backend to delete messages (for-me)
+  const res = await fetch(`{{ url_for('bulk_delete') }}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids})});
+  const j = await res.json(); if(j.success){ ids.forEach(id=>{ const el = messagesEl.querySelector(`[data-id="${id}"]`); if(el){ el.querySelector('.message-text')?.replaceWith(createDeletedNode()); el.classList.add('deleted'); } }); selectedMessages.clear(); document.getElementById('bulkDeleteBtn').disabled=true; }
+});
+
+// clear chat
+document.getElementById('clearChatBtn').addEventListener('click', async ()=>{
+  if(!confirm('Clear entire chat?')) return;
+  const res = await fetch(`{{ url_for('clear_chat') }}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room})});
+  const j = await res.json(); if(j.success){ messagesEl.innerHTML=''; }
+});
+
+// ---------- Message menu ----------
+function openMenu(e, id){ e.stopPropagation(); const menu = floatingMenu; menu.innerHTML=''; menu.classList.remove('hidden'); menu.style.left = e.pageX+'px'; menu.style.top = e.pageY+'px'; menu.setAttribute('aria-hidden','false');
+  const deleteBtn = document.createElement('button'); deleteBtn.innerText='Delete for me'; deleteBtn.onclick = ()=> deleteMessage(id,false);
+  const delAllBtn = document.createElement('button'); delAllBtn.innerText='Delete for everyone'; delAllBtn.onclick = ()=> deleteMessage(id,true);
+  const copyBtn = document.createElement('button'); copyBtn.innerText='Copy'; copyBtn.onclick = ()=> copyMessage(id);
+  const editBtn = document.createElement('button'); editBtn.innerText='Edit'; editBtn.onclick = ()=> editMessage(id);
+  const replyBtn = document.createElement('button'); replyBtn.innerText='Reply'; replyBtn.onclick = ()=> replyToMessage(id);
+  menu.appendChild(copyBtn); menu.appendChild(replyBtn); menu.appendChild(editBtn); menu.appendChild(deleteBtn); menu.appendChild(delAllBtn);
+}
+window.addEventListener('click', ()=>{ floatingMenu.classList.add('hidden'); floatingMenu.setAttribute('aria-hidden','true'); });
+
+async function deleteMessage(id, forEveryone){
+  if(!confirm('Confirm delete?')) return;
+  const url = forEveryone? `{{ url_for('delete_for_everyone') }}` : `{{ url_for('delete_message') }}`;
+  const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,room})});
+  const j = await r.json(); if(j.success){ const node = messagesEl.querySelector(`[data-id="${id}"]`); if(node){ if(forEveryone){ node.remove(); } else { node.querySelector('.message-text')?.replaceWith(createDeletedNode()); node.classList.add('deleted'); } } }
+}
+function copyMessage(id){ const node = messagesEl.querySelector(`[data-id="${id}"] .message-text`); if(node){ navigator.clipboard.writeText(node.innerText||''); alert('Copied'); } }
+function editMessage(id){ const node = messagesEl.querySelector(`[data-id="${id}"] .message-text`); if(!node) return; const old = node.innerText; const newText = prompt('Edit message', old); if(newText===null) return; fetch(`{{ url_for('edit_message') }}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,text:newText})}).then(r=>r.json()).then(j=>{ if(j.success) node.innerText = newText; else alert('Edit failed'); }); }
+function replyToMessage(id){ const node = messagesEl.querySelector(`[data-id="${id}"] .message-text`); if(!node) return; messageInput.value = `@reply:${id} `; messageInput.focus(); }
+
+// ---------- send message ----------
+const messageInput = document.getElementById('messageInput'); document.getElementById('sendBtn').addEventListener('click', sendMessage);
+messageInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); } else { socket.emit('typing',{room, user:currentUser, is_typing:true}); setTimeout(()=> socket.emit('typing',{room,user:currentUser,is_typing:false}), 1000); } });
+
+async function sendMessage(){ const text = messageInput.value.trim(); if(!text) return; const payload = {room, text}; // optimistic
+  socket.emit('send_message', payload); messageInput.value=''; }
+
+// ---------- file upload ----------
+const fileInput = document.getElementById('fileInput'); fileInput.addEventListener('change', async (e)=>{
+  const f = e.target.files[0]; if(!f) return; const fd = new FormData(); fd.append('file', f); fd.append('room', room);
+  const res = await fetch(`{{ url_for('upload') }}`, {method:'POST', body: fd}); const j = await res.json(); if(!j.success) alert('Upload failed'); e.target.value='';
+});
+
+// ---------- mark read ----------
+function markRead(){ socket.emit('mark_read',{room}); }
+messagesWrap.addEventListener('scroll', ()=>{ if(isAtBottom()) markRead(); });
+window.addEventListener('load', ()=> setTimeout(markRead,800));
+
+// ---------- audio playback ----------
+function createAudioPlayer(audioId, url){ if(audioPlayers.has(audioId)) return audioPlayers.get(audioId); const audio = new Audio(url); const progressBar = document.getElementById(audioId+'_progress'); const current = document.getElementById(audioId+'_current'); audio.addEventListener('timeupdate', ()=>{ if(audio.duration && progressBar) progressBar.style.width = (audio.currentTime/audio.duration*100) + '%'; if(current) current.textContent = formatDuration(Math.floor(audio.currentTime)); }); audio.addEventListener('ended', ()=> updatePlayBtn(audioId,false)); audioPlayers.set(audioId,{audio,progressBar,current}); return audioPlayers.get(audioId); }
+function toggleAudio(audioId,url){ const p = audioPlayers.get(audioId); if(p && !p.audio.paused){ p.audio.pause(); updatePlayBtn(audioId,false); return; } audioPlayers.forEach((o,k)=>{ if(!o.audio.paused){ o.audio.pause(); updatePlayBtn(k,false); } }); const player = createAudioPlayer(audioId,url); if(player) player.audio.play().then(()=>updatePlayBtn(audioId,true)).catch(e=>{alert('Playback failed')}); }
+function updatePlayBtn(audioId,isPlaying){ const node = document.querySelector(`[data-audio-id="${audioId}"] .audio-play-btn`); if(node) node.innerHTML = isPlaying? '<i class="fas fa-pause"></i>':'<i class="fas fa-play"></i>'; }
+function seekAudio(e,audioId){ const p = audioPlayers.get(audioId); if(!p||!p.audio.duration) return; const rect = e.currentTarget.getBoundingClientRect(); const pct = Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width)); p.audio.currentTime = pct*p.audio.duration; }
+
+// ---------- recording ----------
+async function toggleRecording(){ if(recordingState.active) return cancelRecording(); try{ const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}}); const mr = new MediaRecorder(stream); recordingState.active=true; recordingState.media=mr; recordingState.chunks=[]; mr.ondataavailable = e=> { if(e.data.size) recordingState.chunks.push(e.data); }; mr.onstop = ()=>{ const blob = new Blob(recordingState.chunks,{type:'audio/webm'}); const url = URL.createObjectURL(blob); // show panel
+    document.getElementById('voicePanel').classList.add('active'); document.getElementById('voicePanel').classList.remove('hidden'); document.getElementById('voicePanel').setAttribute('aria-hidden','false'); recordingState.blob = blob; }
+    mr.start(); recordingState.start = Date.now(); showRecordingTimer();
+  }catch(e){ alert('Microphone access denied'); }
+}
+function showRecordingTimer(){ const t = document.getElementById('recordTime'); const iv = setInterval(()=>{ if(!recordingState.active) { clearInterval(iv); return; } const s = Math.floor((Date.now()-recordingState.start)/1000); t.innerText = formatDuration(s); },250); }
+function cancelRecording(){ if(recordingState.media && recordingState.media.state!=='inactive') recordingState.media.stop(); recordingState.active=false; recordingState.chunks=[]; document.getElementById('voicePanel').classList.add('hidden'); }
+async function sendVoice(){ if(!recordingState.blob) return; const fd = new FormData(); fd.append('audio', recordingState.blob, 'voice.webm'); fd.append('room', room); const res = await fetch(`{{ url_for('upload_voice') }}`, {method:'POST', body: fd}); const j = await res.json(); if(!j.success) alert('Voice upload failed'); document.getElementById('voicePanel').classList.add('hidden'); recordingState.active=false; recordingState.blob=null; }
+
+// ---------- typing indicator (simple) ----------
+let typingTimer = null; function sendTyping(){ socket.emit('typing',{room,user:currentUser,is_typing:true}); clearTimeout(typingTimer); typingTimer = setTimeout(()=> socket.emit('typing',{room,user:currentUser,is_typing:false}),1000); }
+messageInput.addEventListener('input', sendTyping);
+
+// ---------- utils ----------
+function escapeHtmlBasic(s){ return s? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
+
+// ---------- finishing touches ----------
+// smooth scroll to bottom on first load
+setTimeout(()=> scrollToBottom(),200);
+</script>
+{% endblock %}
