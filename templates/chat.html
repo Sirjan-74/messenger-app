@@ -2,9 +2,6 @@
 {% block title %}Chat - Enhanced Messenger{% endblock %}
 {% block extra_style %}
 <style>
- body {
-        overflow: hidden;
-    }
     
     .navbar {
         display: none !important;
@@ -461,6 +458,10 @@
             max-width: 85%;
         }
     }
+    .chat-header {
+    height: 70px;
+}
+
 </style>
 {% endblock %}
 
@@ -780,5 +781,6 @@ window.addEventListener('beforeunload', () => {
 });
 </script>
 {% endblock %}
+
 
 
