@@ -98,7 +98,7 @@
 
   <div id="messagesContainer" class="messages-container" aria-live="polite" role="log">
     {% for msg in messages %}
-    <div class="message {{ 'own' if msg.author_username == user.username else '' }}" data-msg-id="{{ msg.id }}">
+    <div class="message {{ 'own' if msg.author_username == user.username else '' }}" data-msg-id="{{ msg._id }}">
       <div class="message-bubble">
         <div style="display:flex; align-items:flex-start; gap:8px;">
           <div style="flex:1;">
@@ -137,11 +137,11 @@
 
           <!-- menu dropdown -->
           <div class="dropdown" role="menu" aria-hidden="true">
-            <button onclick="replyTo('{{ msg.id }}')"><i class="fas fa-reply"></i> Reply</button>
-            <button onclick="openEditModal('{{ msg.id }}', `{{ (msg.text|replace('`','\\`') )|escape }}`)"><i class="fas fa-edit"></i> Edit</button>
-            <button onclick="deleteForMe('{{ msg.id }}')"><i class="fas fa-trash"></i> Delete (for me)</button>
-            <button onclick="deleteEveryone('{{ msg.id }}')"><i class="fas fa-user-times"></i> Delete for everyone</button>
-            <button onclick="toggleSelectFromMenu('{{ msg.id }}')"><i class="fas fa-check-circle"></i> Select</button>
+            <button onclick="replyTo('{{ msg._id }}')"><i class="fas fa-reply"></i> Reply</button>
+            <button onclick="openEditModal('{{ msg._id }}', `{{ (msg.text|replace('`','\\`') )|escape }}`)"><i class="fas fa-edit"></i> Edit</button>
+            <button onclick="deleteForMe('{{ msg._id }}')"><i class="fas fa-trash"></i> Delete (for me)</button>
+            <button onclick="deleteEveryone('{{ msg._id }}')"><i class="fas fa-user-times"></i> Delete for everyone</button>
+            <button onclick="toggleMsgSelect(event, '{{ msg._id }}', this)"><i class="fas fa-check-circle"></i> Select</button>
           </div>
 
         </div>
@@ -418,7 +418,7 @@ function appendMessageToDOM(data) {
   try {
     const wrapper = document.createElement('div');
     wrapper.className = 'message ' + (data.author_username === currentUser ? 'own' : '');
-    wrapper.dataset.msgId = data.id;
+    wrapper.dataset.msgId = data._id;
     const bubble = document.createElement('div');
     bubble.className = 'message-bubble';
     // content
@@ -468,3 +468,4 @@ document.getElementById('fileInput').addEventListener('change', function(e){
 window.addEventListener('beforeunload', () => { socket.disconnect(); });
 </script>
 {% endblock %}
+
