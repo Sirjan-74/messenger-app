@@ -855,18 +855,19 @@
                     {% for friend in friends %}
                     <a href="{{ url_for('chat', room=friend.room) }}" class="friend">
                         <div class="friend-avatar" style="position: relative;">
-                            <img src="{{ friend.avatar }}" alt="{{ friend.username }}">
+    <img src="{{ friend.avatar }}" alt="{{ friend.username }}">
 
-        <!-- ONLINE/OFFLINE DOT -->
-        <div class="online-status {{ 'online' if friend.is_online else 'offline' }}"></div>
-
-        <!-- 🔥 UNREAD BADGE (Option C) -->
-        {% if friend.unread_count and friend.unread_count > 0 %}
-        <div class="unread-badge">
+    <!-- ONLINE/OFFLINE DOT -->
+    <div class="online-status {{ 'online' if friend.is_online else 'offline' }}"></div>
+    {% if friend.unread_count and friend.unread_count > 0 %}
+        <div class="unread-badge" data-room="{{ friend.room }}">
             {{ friend.unread_count }}
         </div>
-        {% endif %}
-    </div>
+    {% else %}
+        <div class="unread-badge" data-room="{{ friend.room }}" style="display: none;"></div>
+    {% endif %}
+</div>
+
 
     <div class="friend-info">
         <div class="friend-name">{{ friend.username }}</div>
@@ -1023,7 +1024,8 @@
             });
         });
         socket.on('unread_update', data => {
-    const badge = document.querySelector(`[data-room="${data.room}"] .unread-badge`);
+   const badge = document.querySelector(`.unread-badge[data-room="${data.room}"]`);
+
     
     if (!badge) return;
 
@@ -1038,4 +1040,5 @@
 </body>
 
 </html>
+
 
