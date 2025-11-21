@@ -14,10 +14,14 @@
 
 /* ---------- header controls ---------- */
 .header-controls { display:flex; align-items:center; gap:0.5rem; }
-.top-btn { padding:0.5rem 0.8rem; border-radius:12px; border:1px solid rgba(0,0,0,0.06); background:white; cursor:pointer; font-weight:600; }
+.top-btn { padding:0.5rem 0.8rem; border-radius:12px; border:1px solid rgba(0,0,0,0.06); background:white; cursor:pointer; font-weight:600; transition: all 0.2s; }
 .top-btn.ghost { background:transparent; border:1px solid rgba(0,0,0,0.06); }
+.top-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.top-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.top-btn.delete { background:#ff6b6b; color:white; border:none; }
 .theme-selector { display:flex; gap:8px; margin-left:0.5rem; align-items:center; }
-.theme-btn { width:34px; height:34px; border-radius:50%; border:2px solid rgba(255,255,255,0.6); cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,0.06); }
+.theme-btn { width:34px; height:34px; border-radius:50%; border:2px solid rgba(255,255,255,0.6); cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,0.06); transition: transform 0.2s; }
+.theme-btn:hover { transform: scale(1.1); }
 
 /* color dots */
 .theme-btn.light { background: linear-gradient(135deg,#f8fafc,#e2e8f0); }
@@ -28,43 +32,49 @@
 
 /* ---------- messages ---------- */
 .messages-container { flex:1; overflow-y:auto; padding:1.25rem; scroll-behavior:smooth; position:relative; }
-.message { display:flex; margin-bottom:1.25rem; position:relative; }
+.message { display:flex; margin-bottom:1.25rem; position:relative; animation: slideIn 0.3s ease-out; }
+@keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .message.own { justify-content:flex-end; }
 .message-bubble { max-width: 70%; padding:1rem 1.25rem; border-radius:16px; box-shadow:0 8px 20px rgba(0,0,0,0.05); background:white; position:relative; }
 .message.own .message-bubble { background: linear-gradient(135deg,#667eea,#764ba2); color:white; }
 .message-author { font-weight:700; margin-bottom:0.35rem; font-size:0.95rem; }
 
 /* per-message actions & checkbox */
-.msg-actions { position:absolute; top:6px; right:6px; display:flex; gap:6px; align-items:center; }
-.select-checkbox { width:18px; height:18px; border-radius:4px; border:1px solid #ddd; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; background:white; }
+.msg-actions { position:absolute; top:6px; right:6px; display:flex; gap:6px; align-items:center; opacity: 0.7; transition: opacity 0.2s; }
+.message:hover .msg-actions { opacity: 1; }
+.select-checkbox { width:18px; height:18px; border-radius:4px; border:1px solid #ddd; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; background:white; transition: all 0.2s; }
+.select-checkbox:hover { border-color: #667eea; }
 .select-checkbox.checked { background: #667eea; border-color:#667eea; color:white; }
-.msg-menu-btn { width:30px; height:30px; border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:1px solid rgba(0,0,0,0.05); background:white; }
+.select-checkbox.checked::after { content: '✓'; font-size: 12px; }
+.msg-menu-btn { width:30px; height:30px; border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:1px solid rgba(0,0,0,0.05); background:white; transition: all 0.2s; }
+.msg-menu-btn:hover { background: #f3f4f6; }
 
-/* unread badge */
-.unread-badge { position:absolute; top:-8px; right:-8px; background:#ff4757;color:white;padding:4px 6px;border-radius:12px;font-weight:700;font-size:0.75rem;box-shadow:0 6px 18px rgba(0,0,0,0.08); }
+/* dropdown */
+.dropdown { position: absolute; top:34px; right:6px; background:white; border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,0.12); padding:6px; display:none; z-index:40; min-width: 180px; }
+.dropdown.show { display:block; animation: fadeIn 0.2s; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+.dropdown button { display:block; width:100%; padding:8px 12px; text-align:left; background:transparent; border:none; cursor:pointer; border-radius: 6px; transition: background 0.2s; }
+.dropdown button:hover { background: #f3f4f6; }
 
 /* message timestamp */
 .msg-ts { font-size:0.75rem; opacity:0.7; margin-top:0.5rem; }
 
 /* bottom input */
 .input-area { padding:1rem 1.25rem; border-top:1px solid #eee; display:flex; gap:0.75rem; align-items:center; background:rgba(255,255,255,0.98); }
-.message-input { flex:1; padding:0.9rem 1rem; border-radius:999px; border:1px solid #e6e6e6; outline:none; font-size:1rem; resize:none; background:#fbfbfd; }
-.action-btn { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; }
+.message-input { flex:1; padding:0.9rem 1rem; border-radius:999px; border:1px solid #e6e6e6; outline:none; font-size:1rem; resize:none; background:#fbfbfd; transition: border 0.2s; }
+.message-input:focus { border-color: #667eea; }
+.action-btn { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; transition: all 0.2s; }
+.action-btn:hover { transform: scale(1.05); }
 
-/* small dropdown */
-.dropdown { position: absolute; top:34px; right:6px; background:white; border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,0.08); padding:6px; display:none; z-index:40; }
-.dropdown.show { display:block; }
-.dropdown button { display:block; width:100%; padding:8px 12px; text-align:left; background:transparent; border:none; cursor:pointer; }
-
-/* edit modal simple */
-.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; z-index:1000; }
-.modal-backdrop.show { display:flex; }
-.modal { background:white; padding:1rem; border-radius:12px; min-width:320px; box-shadow:0 20px 50px rgba(0,0,0,0.25); }
+/* edit modal */
+.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:1000; }
+.modal-backdrop.show { display:flex; animation: fadeIn 0.2s; }
+.modal { background:white; padding:1.5rem; border-radius:12px; min-width:320px; max-width: 500px; box-shadow:0 20px 50px rgba(0,0,0,0.25); }
 
 /* responsiveness */
 @media (max-width:900px) {
   .message-bubble { max-width:86%; }
-  .header-controls { gap:0.4rem; }
+  .header-controls { gap:0.4rem; flex-wrap: wrap; }
 }
 </style>
 {% endblock %}
@@ -83,7 +93,7 @@
     <div class="header-controls">
       <button id="selectModeBtn" class="top-btn">Select</button>
       <button id="selectAllBtn" class="top-btn ghost" title="Select all">Select All</button>
-      <button id="deleteSelectedBtn" class="top-btn ghost" style="background:#ff6b6b;color:white;border:none;">Delete Selected</button>
+      <button id="deleteSelectedBtn" class="top-btn delete" disabled>Delete Selected</button>
       <button id="clearChatBtn" class="top-btn ghost">Clear Chat</button>
 
       <div class="theme-selector" title="Choose theme">
@@ -119,31 +129,19 @@
           </div>
 
           <div class="msg-actions">
-            <!-- select checkbox (hidden until select mode) -->
-            <div class="select-checkbox" data-selected="false" title="Select message" style="display:none;" onclick="toggleMsgSelect(event, '{{ msg._id }}', this)">
-              <!-- tick shown by class 'checked' -->
-            </div>
-
-            <!-- menu button -->
-            <div class="msg-menu-btn" onclick="toggleMenu(event, this)">
+            <div class="select-checkbox" data-selected="false" title="Select message" style="display:none;"></div>
+            <div class="msg-menu-btn">
               <i class="fas fa-ellipsis-h"></i>
             </div>
-
-            <!-- unread badge (example) -->
-            {% if msg.unread_count and msg.unread_count > 0 %}
-              <div class="unread-badge">{{ msg.unread_count }}</div>
-            {% endif %}
           </div>
 
-          <!-- menu dropdown -->
-          <div class="dropdown" role="menu" aria-hidden="true">
-            <button onclick="replyTo('{{ msg._id }}')"><i class="fas fa-reply"></i> Reply</button>
-            <button onclick="openEditModal('{{ msg._id }}', `{{ (msg.text|replace('`','\\`') )|escape }}`)"><i class="fas fa-edit"></i> Edit</button>
-            <button onclick="deleteForMe('{{ msg._id }}')"><i class="fas fa-trash"></i> Delete (for me)</button>
-            <button onclick="deleteEveryone('{{ msg._id }}')"><i class="fas fa-user-times"></i> Delete for everyone</button>
-            <button onclick="toggleSelectFromMenu('{{ msg._id }}')"><i class="fas fa-check-circle"></i> Select</button>
+          <div class="dropdown" role="menu">
+            <button data-action="reply"><i class="fas fa-reply"></i> Reply</button>
+            <button data-action="edit"><i class="fas fa-edit"></i> Edit</button>
+            <button data-action="delete-me"><i class="fas fa-trash"></i> Delete (for me)</button>
+            <button data-action="delete-all"><i class="fas fa-user-times"></i> Delete for everyone</button>
+            <button data-action="select"><i class="fas fa-check-circle"></i> Select</button>
           </div>
-
         </div>
       </div>
     </div>
@@ -155,18 +153,18 @@
     <input id="fileInput" type="file" style="display:none;" />
     <button class="action-btn" title="Attach" onclick="document.getElementById('fileInput').click()"><i class="fas fa-paperclip"></i></button>
     <button id="voiceBtn" class="action-btn" title="Record/Voice"><i class="fas fa-microphone"></i></button>
-    <button class="action-btn" onclick="sendMessage()" title="Send" style="background:linear-gradient(135deg,#667eea,#764ba2); color:white;"><i class="fas fa-paper-plane"></i></button>
+    <button id="sendBtn" class="action-btn" title="Send" style="background:linear-gradient(135deg,#667eea,#764ba2); color:white;"><i class="fas fa-paper-plane"></i></button>
   </div>
 </div>
 
 <!-- Edit Modal -->
 <div id="editModalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
   <div class="modal">
-    <h4 style="margin:0 0 8px 0;">Edit message</h4>
+    <h4 style="margin:0 0 12px 0;">Edit message</h4>
     <textarea id="editInput" style="width:100%; min-height:80px; padding:8px; border-radius:8px; border:1px solid #e6e6e6;"></textarea>
-    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
-      <button onclick="closeEditModal()" style="padding:8px 12px; border-radius:8px; border:1px solid #ddd;">Cancel</button>
-      <button onclick="submitEdit()" style="padding:8px 12px; border-radius:8px; background:#00d4aa; color:white; border:none;">Save</button>
+    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+      <button id="cancelEditBtn" style="padding:8px 16px; border-radius:8px; border:1px solid #ddd; background: white;">Cancel</button>
+      <button id="saveEditBtn" style="padding:8px 16px; border-radius:8px; background:#00d4aa; color:white; border:none;">Save</button>
     </div>
   </div>
 </div>
@@ -176,7 +174,7 @@
 {% block scripts %}
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
-/* ---------- state ---------- */
+/* ---------- STATE ---------- */
 const socket = io();
 const room = "{{ room }}";
 const currentUser = "{{ user.username }}";
@@ -185,230 +183,324 @@ const messagesContainer = document.getElementById('messagesContainer');
 let selectMode = false;
 let selectedIds = new Set();
 let currentlyOpenDropdown = null;
+let editingMsgId = null;
 
-/* ---------- theme persistence ---------- */
-function applyTheme(t) {
-  document.documentElement.setAttribute('data-theme', t);
-  localStorage.setItem('chat_theme', t);
-}
-document.querySelectorAll('.theme-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const t = btn.dataset.theme;
-    applyTheme(t);
-  });
-});
-const savedTheme = localStorage.getItem('chat_theme') || 'light';
-applyTheme(savedTheme);
-
-/* ---------- select mode / selection ---------- */
+/* ---------- DOM ELEMENTS ---------- */
 const selectModeBtn = document.getElementById('selectModeBtn');
 const selectAllBtn = document.getElementById('selectAllBtn');
 const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
 const clearChatBtn = document.getElementById('clearChatBtn');
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+const editBackdrop = document.getElementById('editModalBackdrop');
+const editInput = document.getElementById('editInput');
+const cancelEditBtn = document.getElementById('cancelEditBtn');
+const saveEditBtn = document.getElementById('saveEditBtn');
 
+/* ---------- THEME ---------- */
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('chat_theme', t);
+}
+
+document.querySelectorAll('.theme-btn').forEach(btn => {
+  btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+});
+
+const savedTheme = localStorage.getItem('chat_theme') || 'light';
+applyTheme(savedTheme);
+
+/* ---------- SELECT MODE ---------- */
 selectModeBtn.addEventListener('click', () => {
   selectMode = !selectMode;
   setSelectMode(selectMode);
 });
-selectAllBtn.addEventListener('click', selectAllMessages);
-deleteSelectedBtn.addEventListener('click', deleteSelectedMessages);
-clearChatBtn.addEventListener('click', clearChatConfirmation);
 
 function setSelectMode(on) {
   selectMode = !!on;
-  selectModeBtn.textContent = selectMode ? 'Cancel Select' : 'Select';
-  document.querySelectorAll('.select-checkbox').forEach(el => el.style.display = selectMode ? 'inline-flex' : 'none');
-  // when leaving select mode clear selection
+  selectModeBtn.textContent = selectMode ? 'Cancel' : 'Select';
+  
+  document.querySelectorAll('.select-checkbox').forEach(el => {
+    el.style.display = selectMode ? 'inline-flex' : 'none';
+  });
+  
   if (!selectMode) {
     selectedIds.clear();
-    document.querySelectorAll('.select-checkbox').forEach(el => { el.classList.remove('checked'); el.dataset.selected = 'false'; });
+    document.querySelectorAll('.select-checkbox').forEach(el => {
+      el.classList.remove('checked');
+      el.dataset.selected = 'false';
+    });
   }
-  updateTopButtonsState();
+  
+  updateButtonStates();
 }
 
-function toggleMsgSelect(evt, id, el) {
-  evt.stopPropagation();
-  const chk = el;
-  const was = chk.dataset.selected === 'true';
-  if (was) {
-    chk.dataset.selected = 'false'; chk.classList.remove('checked'); selectedIds.delete(id);
+function toggleMsgSelect(msgId, checkboxEl) {
+  const isSelected = checkboxEl.dataset.selected === 'true';
+  
+  if (isSelected) {
+    checkboxEl.dataset.selected = 'false';
+    checkboxEl.classList.remove('checked');
+    selectedIds.delete(msgId);
   } else {
-    chk.dataset.selected = 'true'; chk.classList.add('checked'); selectedIds.add(id);
+    checkboxEl.dataset.selected = 'true';
+    checkboxEl.classList.add('checked');
+    selectedIds.add(msgId);
   }
-  updateTopButtonsState();
+  
+  updateButtonStates();
 }
 
-function toggleSelectFromMenu(id) {
-  // show checkbox and toggle it
-  setSelectMode(true);
-  const el = document.querySelector(`.message[data-msg-id="${id}"] .select-checkbox`);
-  if (el) toggleMsgSelect(new Event('click'), id, el);
-  closeAllDropdowns();
-}
-
-function selectAllMessages() {
+selectAllBtn.addEventListener('click', () => {
   const checkboxes = Array.from(document.querySelectorAll('.select-checkbox'));
-  if (checkboxes.length === 0) return;
   const allSelected = checkboxes.every(ch => ch.dataset.selected === 'true');
-  if (allSelected) {
-    // unselect all
-    checkboxes.forEach(ch => { ch.dataset.selected='false'; ch.classList.remove('checked'); selectedIds.clear(); });
-  } else {
-    checkboxes.forEach(ch => { ch.dataset.selected='true'; ch.classList.add('checked'); selectedIds.add(ch.closest('.message').dataset.msgId);
- });
-  }
-  // rebuild selectedIds
-  selectedIds = new Set(checkboxes.filter(ch => ch.dataset.selected==='true').map(ch => ch.closest('.message').dataset.msgId));
-  updateTopButtonsState();
-}
-
-function updateTopButtonsState() {
-  deleteSelectedBtn.disabled = selectedIds.size === 0;
-  deleteSelectedBtn.style.opacity = selectedIds.size === 0 ? 0.6 : 1;
-}
-
-/* ---------- per-message menu ---------- */
-function toggleMenu(e, btn) {
-  e.stopPropagation();
-  closeAllDropdowns();
-  const dd = btn.parentElement.querySelector('.dropdown');
-  if (!dd) return;
-  dd.classList.toggle('show');
-  currentlyOpenDropdown = dd.classList.contains('show') ? dd : null;
-}
-document.addEventListener('click', (e) => {
-  if (currentlyOpenDropdown && !currentlyOpenDropdown.contains(e.target)) closeAllDropdowns();
+  
+  checkboxes.forEach(ch => {
+    const msgId = ch.closest('.message').dataset.msgId;
+    if (allSelected) {
+      ch.dataset.selected = 'false';
+      ch.classList.remove('checked');
+      selectedIds.delete(msgId);
+    } else {
+      ch.dataset.selected = 'true';
+      ch.classList.add('checked');
+      selectedIds.add(msgId);
+    }
+  });
+  
+  updateButtonStates();
 });
-function closeAllDropdowns(){ document.querySelectorAll('.dropdown').forEach(d=>d.classList.remove('show')); currentlyOpenDropdown = null; }
 
-/* ---------- edit modal ---------- */
-let editingMsgId = null;
-const editBackdrop = document.getElementById('editModalBackdrop');
+function updateButtonStates() {
+  deleteSelectedBtn.disabled = selectedIds.size === 0;
+}
+
+/* ---------- DROPDOWN MENUS ---------- */
+messagesContainer.addEventListener('click', (e) => {
+  const menuBtn = e.target.closest('.msg-menu-btn');
+  if (menuBtn) {
+    e.stopPropagation();
+    const dropdown = menuBtn.parentElement.parentElement.querySelector('.dropdown');
+    closeAllDropdowns();
+    if (dropdown) {
+      dropdown.classList.toggle('show');
+      currentlyOpenDropdown = dropdown.classList.contains('show') ? dropdown : null;
+    }
+    return;
+  }
+  
+  const checkbox = e.target.closest('.select-checkbox');
+  if (checkbox) {
+    e.stopPropagation();
+    const msgId = checkbox.closest('.message').dataset.msgId;
+    toggleMsgSelect(msgId, checkbox);
+    return;
+  }
+  
+  const dropdownBtn = e.target.closest('.dropdown button');
+  if (dropdownBtn) {
+    e.stopPropagation();
+    const action = dropdownBtn.dataset.action;
+    const msgEl = dropdownBtn.closest('.message');
+    const msgId = msgEl.dataset.msgId;
+    const msgText = msgEl.querySelector('.msg-text')?.textContent || '';
+    
+    handleMenuAction(action, msgId, msgText);
+    closeAllDropdowns();
+  }
+});
+
+document.addEventListener('click', () => closeAllDropdowns());
+
+function closeAllDropdowns() {
+  document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('show'));
+  currentlyOpenDropdown = null;
+}
+
+function handleMenuAction(action, msgId, msgText) {
+  switch(action) {
+    case 'reply':
+      messageInput.value = `Replying to: "${msgText.substring(0, 50)}..."\n`;
+      messageInput.focus();
+      break;
+    case 'edit':
+      openEditModal(msgId, msgText);
+      break;
+    case 'delete-me':
+      deleteForMe(msgId);
+      break;
+    case 'delete-all':
+      deleteEveryone(msgId);
+      break;
+    case 'select':
+      setSelectMode(true);
+      const checkbox = document.querySelector(`.message[data-msg-id="${msgId}"] .select-checkbox`);
+      if (checkbox) toggleMsgSelect(msgId, checkbox);
+      break;
+  }
+}
+
+/* ---------- EDIT MODAL ---------- */
 function openEditModal(msgId, currentText) {
   editingMsgId = msgId;
-  document.getElementById('editInput').value = currentText || '';
+  editInput.value = currentText || '';
   editBackdrop.classList.add('show');
 }
+
 function closeEditModal() {
   editingMsgId = null;
   editBackdrop.classList.remove('show');
 }
-async function submitEdit() {
-  const newText = document.getElementById('editInput').value.trim();
-  if (!editingMsgId) return closeEditModal();
-  if (newText.length === 0) { alert('Message cannot be empty'); return; }
+
+cancelEditBtn.addEventListener('click', closeEditModal);
+
+saveEditBtn.addEventListener('click', async () => {
+  const newText = editInput.value.trim();
+  if (!editingMsgId || !newText) {
+    alert('Message cannot be empty');
+    return;
+  }
+  
   try {
     const res = await fetch('/edit_message', {
-      method:'POST',
-      headers: { 'Content-Type':'application/json' },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message_id: editingMsgId, new_text: newText })
     });
-    const j = await res.json();
-    if (j.success) {
-      // update DOM message text (optimistic)
-      const el = document.querySelector(`.message[data-msg-id="${editingMsgId}"] .msg-text`);
-      if (el) el.textContent = newText;
+    const data = await res.json();
+    
+    if (data.success) {
+      const msgEl = document.querySelector(`.message[data-msg-id="${editingMsgId}"] .msg-text`);
+      if (msgEl) msgEl.textContent = newText;
       socket.emit('message_edited', { room, message_id: editingMsgId, new_text: newText });
+      closeEditModal();
     } else {
-      alert('Edit failed: ' + (j.message || 'unknown'));
+      alert('Edit failed: ' + (data.message || 'unknown'));
     }
   } catch (err) {
-    console.error(err); alert('Edit request failed');
-  } finally { closeEditModal(); }
-}
+    console.error(err);
+    alert('Edit request failed');
+  }
+});
 
-/* ---------- deletion actions ---------- */
+/* ---------- DELETE FUNCTIONS ---------- */
 async function deleteForMe(msgId) {
   if (!confirm('Delete this message for you?')) return;
+  
   try {
     const res = await fetch('/delete_message', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ message_ids: [msgId] })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message_ids: [msgId] })
     });
-    const j = await res.json();
-    if (j.success) {
-      // remove from DOM
+    const data = await res.json();
+    
+    if (data.success) {
       const node = document.querySelector(`.message[data-msg-id="${msgId}"]`);
       if (node) node.remove();
       socket.emit('message_deleted', { room, message_id: msgId });
-    } else alert('Delete failed: ' + (j.message||''));
-  } catch(err){ console.error(err); alert('Delete request failed'); }
+    } else {
+      alert('Delete failed: ' + (data.message || ''));
+    }
+  } catch(err) {
+    console.error(err);
+    alert('Delete request failed');
+  }
 }
 
 async function deleteEveryone(msgId) {
-  if (!confirm('Delete this message for everyone? This will attempt to remove it from other users.')) return;
+  if (!confirm('Delete this message for everyone?')) return;
+  
   try {
     const res = await fetch('/delete_everyone', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ message_id: msgId })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message_id: msgId })
     });
-    const j = await res.json();
-    if (j.success) {
+    const data = await res.json();
+    
+    if (data.success) {
       const node = document.querySelector(`.message[data-msg-id="${msgId}"]`);
       if (node) node.remove();
       socket.emit('message_deleted_everyone', { room, message_id: msgId });
-    } else alert('Delete for everyone failed: ' + (j.message||''));
-  } catch(err){ console.error(err); alert('Delete everyone request failed'); }
+    } else {
+      alert('Delete for everyone failed: ' + (data.message || ''));
+    }
+  } catch(err) {
+    console.error(err);
+    alert('Delete everyone request failed');
+  }
 }
 
-async function deleteSelectedMessages() {
-  if (selectedIds.size === 0) return alert('No messages selected');
-  if (!confirm(`Delete ${selectedIds.size} selected message(s) for you?`)) return;
+deleteSelectedBtn.addEventListener('click', async () => {
+  if (selectedIds.size === 0) return;
+  if (!confirm(`Delete ${selectedIds.size} selected message(s)?`)) return;
+  
   const ids = Array.from(selectedIds);
   try {
     const res = await fetch('/delete_message', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ message_ids: ids })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message_ids: ids })
     });
-    const j = await res.json();
-    if (j.success) {
-      ids.forEach(id => { const n = document.querySelector(`.message[data-msg-id="${id}"]`); if(n) n.remove(); });
+    const data = await res.json();
+    
+    if (data.success) {
+      ids.forEach(id => {
+        const node = document.querySelector(`.message[data-msg-id="${id}"]`);
+        if (node) node.remove();
+      });
       selectedIds.clear();
       setSelectMode(false);
       socket.emit('messages_deleted', { room, message_ids: ids });
-    } else alert('Delete failed: ' + (j.message||''));
-  } catch(err) { console.error(err); alert('Delete request failed'); }
-}
+    } else {
+      alert('Delete failed: ' + (data.message || ''));
+    }
+  } catch(err) {
+    console.error(err);
+    alert('Delete request failed');
+  }
+});
 
-function clearChatConfirmation() {
-  if (!confirm('Clear entire chat history locally?')) return;
-  clearChat();
-}
-async function clearChat() {
+clearChatBtn.addEventListener('click', async () => {
+  if (!confirm('Clear entire chat history?')) return;
+  
   try {
     const res = await fetch('/clear_chat', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ room })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ room })
     });
-    const j = await res.json();
-    if (j.success) {
-      // remove all messages from DOM
+    const data = await res.json();
+    
+    if (data.success) {
       document.querySelectorAll('.message').forEach(m => m.remove());
       socket.emit('chat_cleared', { room });
-    } else alert('Clear failed: ' + (j.message||''));
-  } catch (err) { console.error(err); alert('Clear request failed'); }
-}
+    } else {
+      alert('Clear failed: ' + (data.message || ''));
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Clear request failed');
+  }
+});
 
-/* ---------- reply helper ---------- */
-function replyTo(msgId) {
-  // set reference like '> username: text' — minimal UX
-  const msgEl = document.querySelector(`.message[data-msg-id="${msgId}"]`);
-  const author = msgEl ? (msgEl.querySelector('.message-author') ? msgEl.querySelector('.message-author').textContent : '{{ peer_name or room }}') : '';
-  const text = msgEl ? (msgEl.querySelector('.msg-text') ? msgEl.querySelector('.msg-text').textContent : '') : '';
-  messageInput.value = `@${author} ▶ ${text}\n`;
-  messageInput.focus();
-  closeAllDropdowns();
-}
-
-/* ---------- socket + message append (keeps previous behavior) ---------- */
+/* ---------- SOCKET.IO ---------- */
 socket.on('connect', () => {
-  console.log('socket connected');
+  console.log('Socket connected');
   document.getElementById('status').textContent = 'Connected';
   socket.emit('join_room', { room });
 });
-socket.on('disconnect', () => { document.getElementById('status').textContent = 'Reconnecting...'; });
+
+socket.on('disconnect', () => {
+  document.getElementById('status').textContent = 'Reconnecting...';
+});
 
 socket.on('new_message', data => {
-  // append message quickly (simplified)
   appendMessageToDOM(data);
-  // if bottom then scroll
-  if (isAtBottom(messagesContainer)) messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  if (isAtBottom(messagesContainer, 50)) {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
 });
 
 function isAtBottom(container, threshold = 40) {
@@ -416,58 +508,91 @@ function isAtBottom(container, threshold = 40) {
 }
 
 function appendMessageToDOM(data) {
-  try {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'message ' + (data.author_username === currentUser ? 'own' : '');
-    wrapper.dataset.msgId = data._id;
-    const bubble = document.createElement('div');
-    bubble.className = 'message-bubble';
-    // content
-    const textDiv = document.createElement('div');
-    textDiv.className = 'msg-text';
-    textDiv.textContent = data.text || '';
-    bubble.appendChild(textDiv);
-    const ts = document.createElement('div');
-    ts.className = 'msg-ts'; ts.textContent = new Date(data.timestamp || Date.now()).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-    bubble.appendChild(ts);
-    wrapper.appendChild(bubble);
-    messagesContainer.appendChild(wrapper);
-  } catch (e) { console.error('appendMessageToDOM error', e); }
+  const wrapper = document.createElement('div');
+  wrapper.className = 'message ' + (data.author_username === currentUser ? 'own' : '');
+  wrapper.dataset.msgId = data._id || Date.now();
+  
+  wrapper.innerHTML = `
+    <div class="message-bubble">
+      <div style="display:flex; align-items:flex-start; gap:8px;">
+        <div style="flex:1;">
+          ${data.author_username !== currentUser ? `<div class="message-author">${data.author_username}</div>` : ''}
+          <div class="msg-text">${escapeHtml(data.text || '')}</div>
+          <div class="msg-ts">${formatTime(data.timestamp)}</div>
+        </div>
+        <div class="msg-actions">
+          <div class="select-checkbox" data-selected="false" style="display:none;"></div>
+          <div class="msg-menu-btn"><i class="fas fa-ellipsis-h"></i></div>
+        </div>
+        <div class="dropdown" role="menu">
+          <button data-action="reply"><i class="fas fa-reply"></i> Reply</button>
+          <button data-action="edit"><i class="fas fa-edit"></i> Edit</button>
+          <button data-action="delete-me"><i class="fas fa-trash"></i> Delete (for me)</button>
+          <button data-action="delete-all"><i class="fas fa-user-times"></i> Delete for everyone</button>
+          <button data-action="select"><i class="fas fa-check-circle"></i> Select</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  messagesContainer.appendChild(wrapper);
 }
 
-/* ---------- sending messages (simple) ---------- */
-const messageInput = document.getElementById('messageInput');
-async function sendMessage() {
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function formatTime(timestamp) {
+  const date = new Date(timestamp || Date.now());
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+/* ---------- SEND MESSAGE ---------- */
+function sendMessage() {
   const text = messageInput.value.trim();
   if (!text) return;
+  
   socket.emit('send_message', { message: text, room });
   messageInput.value = '';
 }
 
-/* ---------- audio helpers omitted (keep your previous implementation) ---------- */
-/* ---------- file input handling ---------- */
-document.getElementById('fileInput').addEventListener('change', function(e){
+sendBtn.addEventListener('click', sendMessage);
+
+messageInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+/* ---------- FILE UPLOAD ---------- */
+document.getElementById('fileInput').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
+  
   const fd = new FormData();
   fd.append('file', file);
   fd.append('room', room);
-  fetch('/upload', { method:'POST', body: fd }).then(r=>r.json()).then(j=>{
-    if (!j.success) alert('Upload failed: ' + (j.message||''));
-  }).catch(err=>{ console.error(err); alert('Upload failed'); }).finally(()=> e.target.value = '');
+  
+  fetch('/upload', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.success) alert('Upload failed: ' + (data.message || ''));
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Upload failed');
+    })
+    .finally(() => e.target.value = '');
 });
 
-/* ---------- utility: find message id helper (older browsers) ---------- */
+/* ---------- INITIALIZATION ---------- */
 (function init() {
-  // show/hide select checkboxes only when selectMode, but keep them hidden initially
   document.querySelectorAll('.select-checkbox').forEach(el => el.style.display = 'none');
-  // disable deleteSelected initially
   deleteSelectedBtn.disabled = true;
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
 })();
-
-/* ---------- Before unload cleanup ---------- */
-window.addEventListener('beforeunload', () => { socket.disconnect(); });
 </script>
 {% endblock %}
-
-
