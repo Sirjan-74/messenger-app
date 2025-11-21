@@ -120,7 +120,7 @@
 
           <div class="msg-actions">
             <!-- select checkbox (hidden until select mode) -->
-            <div class="select-checkbox" data-selected="false" title="Select message" style="display:none;" onclick="toggleMsgSelect(event, '{{ msg.id }}', this)">
+            <div class="select-checkbox" data-selected="false" title="Select message" style="display:none;" onclick="toggleMsgSelect(event, '{{ msg._id }}', this)">
               <!-- tick shown by class 'checked' -->
             </div>
 
@@ -141,7 +141,7 @@
             <button onclick="openEditModal('{{ msg._id }}', `{{ (msg.text|replace('`','\\`') )|escape }}`)"><i class="fas fa-edit"></i> Edit</button>
             <button onclick="deleteForMe('{{ msg._id }}')"><i class="fas fa-trash"></i> Delete (for me)</button>
             <button onclick="deleteEveryone('{{ msg._id }}')"><i class="fas fa-user-times"></i> Delete for everyone</button>
-            <button onclick="toggleMsgSelect(event, '{{ msg._id }}', this)"><i class="fas fa-check-circle"></i> Select</button>
+            <button onclick="toggleSelectFromMenu('{{ msg._id }}')"><i class="fas fa-check-circle"></i> Select</button>
           </div>
 
         </div>
@@ -254,7 +254,8 @@ function selectAllMessages() {
     // unselect all
     checkboxes.forEach(ch => { ch.dataset.selected='false'; ch.classList.remove('checked'); selectedIds.clear(); });
   } else {
-    checkboxes.forEach(ch => { ch.dataset.selected='true'; ch.classList.add('checked'); selectedIds.add(ch.closest('.message').dataset.msgId || ch.closest('.message').dataset.msgId); });
+    checkboxes.forEach(ch => { ch.dataset.selected='true'; ch.classList.add('checked'); selectedIds.add(ch.closest('.message').dataset.msgId);
+ });
   }
   // rebuild selectedIds
   selectedIds = new Set(checkboxes.filter(ch => ch.dataset.selected==='true').map(ch => ch.closest('.message').dataset.msgId));
@@ -468,4 +469,5 @@ document.getElementById('fileInput').addEventListener('change', function(e){
 window.addEventListener('beforeunload', () => { socket.disconnect(); });
 </script>
 {% endblock %}
+
 
