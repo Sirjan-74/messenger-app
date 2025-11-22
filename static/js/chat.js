@@ -46,7 +46,11 @@
       console.error('Socket.IO not loaded. Add <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script> before chat.js');
       return;
     }
-    socket = io();
+    socket = io(window.location.origin, {
+    transports: ["websocket", "polling"],
+    withCredentials: true
+});
+
 
     socket.on('connect', () => {
       console.log('socket connected:', socket.id);
