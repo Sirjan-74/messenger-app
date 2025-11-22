@@ -95,9 +95,6 @@ if IS_DB_AVAILABLE:
 else:
     app.logger.info("Database support disabled (flask_pymongo not installed).")
 
-# SocketIO + eventlet
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet", manage_session=True)
-
 # In-memory state
 # active_users: sid -> {'email':..., 'username':..., 'connected_at':...}
 active_users = {}
@@ -1190,5 +1187,6 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
+
 
 
