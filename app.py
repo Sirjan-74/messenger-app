@@ -1,8 +1,6 @@
 #app.py
 import eventlet
 eventlet.monkey_patch()
-import eventlet.wsgi
-eventlet.patcher.monkey_patch(all=True)
 
 from flask import Flask
 from flask_socketio import SocketIO
@@ -790,6 +788,82 @@ def upload_voice_message():
     except Exception as e:
         app.logger.error(f"Voice upload error: {e}")
         return jsonify({'success': False, 'message': f"Upload failed: {str(e)}"})
+ # ---------------------------
+# MESSAGE EDIT / DELETE ENDPOINTS (FULLY FIXED)
+# ---------------------------
+
+@app.route('/edit_message', methods=['POST'])
+@login_required
+def edit_message():
+    if not IS_DB_AVAILABLE:
+        return jsonify({'success': False, 'message': 'DB disabled'})
+
+    data = request.get_json()
+    msg_id = data.get("message_id")
+    new_text = data.get("new_text", "").strip()
+
+    if not msg_id or not new_text:
+        return jsonify({'success': False, 'message': 'Invalid data'})
+
+    try:
+        mongo.db.messages.update_one(
+            {"_id": msg_id},
+            {"$set": {"text": new_text}}
+        )
+        return jsonify({'success': True})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/delete_message', methods=['POST'])
+@login_required
+def delete_message():
+    if not IS_DB_AVAILABLE:
+        return jsonify({'success': False, 'message': 'DB disabled'})
+
+    data = request.get_json()
+    ids = data.get("message_ids", [])
+
+    try:
+        for msg_id in ids:
+            mongo.db.messages.delete_one({"_id": msg_id})
+
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/delete_everyone', methods=['POST'])
+@login_required
+def delete_everyone():
+    if not IS_DB_AVAILABLE:
+        return jsonify({'success': False, 'message': 'DB disabled'})
+
+    data = request.get_json()
+    msg_id = data.get("message_id")
+
+    try:
+        mongo.db.messages.delete_one({"_id": msg_id})
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/clear_chat', methods=['POST'])
+@login_required
+def clear_chat():
+    if not IS_DB_AVAILABLE:
+        return jsonify({'success': False, 'message': 'DB disabled'})
+
+    data = request.get_json()
+    room = data.get("room")
+
+    try:
+        mongo.db.messages.delete_many({"room": room})
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
 
 # ---------------------------
 # SocketIO events
