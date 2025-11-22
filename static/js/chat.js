@@ -1,3 +1,28 @@
+// -------------------- AUDIO PLAYER FIX --------------------
+let currentAudio = null;
+
+function toggleAudio(audioId, fileUrl) {
+    try {
+        // Stop previous audio if playing
+        if (currentAudio && !currentAudio.paused) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            currentAudio = null;
+            return;
+        }
+
+        // create new audio object
+        currentAudio = new Audio(fileUrl);
+        currentAudio.play();
+
+        currentAudio.onended = () => {
+            currentAudio = null;
+        };
+
+    } catch (error) {
+        console.error("Audio play error:", error);
+    }
+}
 (function () {
   'use strict';
 
