@@ -1,7 +1,9 @@
-# app.py
+#app.py
 import eventlet
 eventlet.monkey_patch()
 
+from flask import Flask
+from flask_socketio import SocketIO
 import os
 import secrets
 import base64
@@ -14,10 +16,13 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import (Flask, render_template, request, redirect, url_for,
                    session, flash, jsonify, send_from_directory, send_file)
+
 from werkzeug.security import generate_password_hash, check_password_hash
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+
+
 
 cloudinary.config(
   cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME"),
@@ -42,7 +47,7 @@ except ImportError:
     IS_DB_AVAILABLE = False
     print("ERROR: PyMongo not installed. Run `pip install flask-pymongo` if using DB support")
 
-from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
+
 
 # Flask app config
 app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -51,6 +56,9 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', 'static/uploads')
 app.config['MAX_CONTENT_LENGTH'] = int(os.environ.get('MAX_CONTENT_LENGTH', 100 * 1024 * 1024))  # 100MB default
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # disable caching for development
+
+
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet", manage_session=True)
 
 # Allowed extensions
 ALLOWED_EXTENSIONS = set(os.environ.get(
@@ -1182,4 +1190,5 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
+
 
