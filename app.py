@@ -866,6 +866,29 @@ def clear_chat():
         return jsonify({'success': False, 'message': str(e)})
 
 # ---------------------------
+# THEME UPDATE ENDPOINT (REQUIRED BY chat.js)
+# ---------------------------
+@app.route('/api/theme', methods=['POST'])
+@login_required
+def api_theme():
+    if not IS_DB_AVAILABLE:
+        return jsonify({'success': False, 'message': 'DB disabled'})
+
+    data = request.get_json()
+    theme = data.get('theme', 'light')
+
+    try:
+        mongo.db.users.update_one(
+            {'email': session['user']['email']},
+            {'$set': {'theme': theme}}
+        )
+        session['user']['theme'] = theme
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+# ---------------------------
 # SocketIO events
 # ---------------------------
 @socketio.on('connect')
@@ -930,7 +953,13 @@ def on_send_message(data):
         result = mongo.db.messages.insert_one(message_data)
         message_data['_id'] = result.inserted_id
     app.logger.debug(f"💬 Message from {session['user']['username']} in {room}: {message_text[:50]}...")
-    emit('new_message', {'author_username': message_data['author_username'], 'text': message_data['text'], 'timestamp': message_data['timestamp'].isoformat(), 'message_type': 'text'}, to=room)
+  emit('new_message', {
+    '_id': str(message_data.get('_id')),
+    'author_username': message_data['author_username'],
+    'text': message_data['text'],
+    'timestamp': message_data['timestamp'].isoformat(),
+    'message_type': 'text'
+}, to=room)
 
     # Update unread counts for participants (do this after insertion)
     if IS_DB_AVAILABLE:
@@ -1263,6 +1292,7 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
+
 
 
 
