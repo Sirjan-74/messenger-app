@@ -1,6 +1,8 @@
 #app.py
 import eventlet
 eventlet.monkey_patch()
+import eventlet.wsgi
+eventlet.patcher.monkey_patch(all=True)
 
 from flask import Flask
 from flask_socketio import SocketIO
@@ -1187,6 +1189,7 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
+
 
 
 
