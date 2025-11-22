@@ -941,32 +941,42 @@ def on_leave_room(data):
 def on_send_message(data):
     if 'user' not in session:
         return
-    message_text = data.get('message', '').strip()
+
+    message_text = data.get('message', '').trim()
     room = data.get('room', '')
     if not message_text or not room:
         return
-    # convert legacy room if present
+
     if '@' in room:
         room, _ = convert_email_room_to_username_room_if_needed(room)
-    message_data = {'room': room, 'author_username': session['user']['username'], 'author_email': session['user']['email'], 'text': message_text, 'timestamp': datetime.now(timezone.utc), 'message_type': 'text'}
+
+    message_data = {
+        'room': room,
+        'author_username': session['user']['username'],
+        'author_email': session['user']['email'],
+        'text': message_text,
+        'timestamp': datetime.now(timezone.utc),
+        'message_type': 'text'
+    }
+
     if IS_DB_AVAILABLE:
         result = mongo.db.messages.insert_one(message_data)
         message_data['_id'] = result.inserted_id
-    app.logger.debug(f"💬 Message from {session['user']['username']} in {room}: {message_text[:50]}...")
-  emit('new_message', {
-    '_id': str(message_data.get('_id')),
-    'author_username': message_data['author_username'],
-    'text': message_data['text'],
-    'timestamp': message_data['timestamp'].isoformat(),
-    'message_type': 'text'
-}, to=room)
 
-    # Update unread counts for participants (do this after insertion)
+    app.logger.debug(f"💬 Message from {session['user']['username']} in {room}: {message_text[:50]}...")
+    emit('new_message', {
+        'author_username': message_data['author_username'],
+        'text': message_data['text'],
+        'timestamp': message_data['timestamp'].isoformat(),
+        'message_type': 'text'
+    }, to=room)
+
     if IS_DB_AVAILABLE:
         try:
             update_unread_for_room(room, message_data['timestamp'], message_data['author_email'])
         except Exception as e:
             app.logger.debug(f"Failed to update unread for room {room}: {e}")
+
 
 @socketio.on('typing')
 def on_typing(data):
@@ -1292,6 +1302,7 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
+
 
 
 
