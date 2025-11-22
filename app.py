@@ -942,7 +942,7 @@ def on_send_message(data):
     if 'user' not in session:
         return
 
-    message_text = data.get('message', '').trim()
+    message_text = data.get('message', '').strip()
     room = data.get('room', '')
     if not message_text or not room:
         return
@@ -1302,7 +1302,6 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
-
 
 
 
