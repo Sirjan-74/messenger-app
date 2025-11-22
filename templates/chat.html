@@ -172,7 +172,11 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+  window.CURRENT_USER = "{{ user.username }}";
+</script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="/static/js/chat.js"></script>
 {% endblock %}
+
 
