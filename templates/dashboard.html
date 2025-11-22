@@ -944,12 +944,50 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> 
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" 
+            integrity="sha384-ebxEYk74mR8Jr2DsvVf5pWQ8P4qS+Ht8hmXPj39LPMAX1hUgj6Ya9w4hzEpwkG5S" 
+            crossorigin="anonymous"></script>
+    
     <script>
-        // Search functionality
+        let socket = null;
+        
         document.addEventListener('DOMContentLoaded', function() {
+            initializeSocket();
+            setupSearch();
+            autoHideAlerts();
+        });
+        
+        function initializeSocket() {
+            if (typeof io === "undefined") {
+                console.warn("Socket.IO not loaded");
+                return;
+            }
+            
+            socket = io(window.location.origin, {
+                transports: ["websocket", "polling"],
+                withCredentials: true
+            });
+            
+            socket.on("connect", () => {
+                console.log("✅ Dashboard socket connected");
+            });
+            
+            socket.on('unread_update', data => {
+                const badge = document.querySelector(`.unread-badge[data-room="${data.room}"]`);
+                if (!badge) return;
+                if (data.unread_count > 0) {
+                    badge.innerText = data.unread_count;
+                    badge.style.display = 'inline-flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            });
+        }
+        
+        function setupSearch() {
             const searchInput = document.getElementById('userSearch');
             const userCards = document.querySelectorAll('.user-card');
             
@@ -960,7 +998,7 @@
                     
                     userCards.forEach(card => {
                         const username = card.dataset.username;
-                        if (username.includes(searchTerm)) {
+                        if (username && username.includes(searchTerm)) {
                             card.style.display = 'flex';
                             visibleCount++;
                         } else {
@@ -968,25 +1006,20 @@
                         }
                     });
                     
-                    // Update discover count
                     const discoverCount = document.getElementById('discover-count');
                     if (discoverCount) {
                         discoverCount.textContent = visibleCount;
                     }
                 });
             }
-        });
+        }
         
-        // Send friend request function
         function sendFriendRequest(username, button) {
             if (button.disabled) return;
             
-            // Add loading state
-            const originalHTML = button.innerHTML;
             button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             button.disabled = true;
             
-            // Create form and submit
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '{{ url_for("add_friend") }}';
@@ -1002,43 +1035,24 @@
             form.submit();
         }
         
-        // Refresh page function
         function refreshPage() {
             const refreshBtn = event.target.closest('.quick-action');
-            const originalHTML = refreshBtn.innerHTML;
             refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Refreshing...';
-            
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
+            setTimeout(() => location.reload(), 1000);
         }
         
-        // Auto-hide alerts after 5 seconds
-        document.addEventListener('DOMContentLoaded', function() {
+        function autoHideAlerts() {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {
                 setTimeout(() => {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
+                    const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                    if (bsAlert) bsAlert.close();
                 }, 5000);
             });
-        });
-        socket.on('unread_update', data => {
-   const badge = document.querySelector(`.unread-badge[data-room="${data.room}"]`);
-
-    
-    if (!badge) return;
-
-    if (data.unread_count > 0) {
-        badge.innerText = data.unread_count;
-        badge.style.display = 'inline-flex';
-    } else {
-        badge.style.display = 'none';
-    }
-});
+        }
     </script>
 </body>
-
 </html>
+
 
 
