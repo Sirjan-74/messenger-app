@@ -173,14 +173,13 @@
 
 {% block scripts %}
 <script>
-  window.CURRENT_USER = "{{ user.username }}";
+    window.CURRENT_USER = "{{ user.username }}";
 </script>
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"
-        integrity="sha384-ebxEYk74mR8Jr2DsvVf5pWQ8P4qS+Ht8hmXPj39LPMAX1hUgj6Ya9w4hzEpwkG5S"
-        crossorigin="anonymous"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 
 {% endblock %}
+
 
 
 
