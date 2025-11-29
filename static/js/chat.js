@@ -9,15 +9,19 @@ function toggleAudio(audioId, fileUrl) {
             currentAudio.pause();
             currentAudio.currentTime = 0;
             currentAudio = null;
+            console.log("⏸️ Audio stopped");
             return;
         }
 
         currentAudio = new Audio(fileUrl);
+        console.log("🎵 Audio object created, attempting to play...");
 
         currentAudio.play()
-        .then(() => console.log("🎵 Playing audio"))
+        .then(() => {
+            console.log("✅ Audio playing successfully!");
+        })
         .catch(e => {
-            console.error("Play error:", e);
+            console.error("❌ Play error:", e);
             alert("Could not play audio: " + e.message);
         });
 
@@ -26,14 +30,21 @@ function toggleAudio(audioId, fileUrl) {
             console.log("🎵 Audio ended");
         };
 
+        currentAudio.onerror = (e) => {
+            console.error("❌ Audio error:", e);
+            alert("Audio loading error");
+        };
+
     } catch (error) {
-        console.error("Audio error:", error);
+        console.error("❌ Audio exception:", error);
         alert("Audio error: " + error.message);
     }
 }
 
 (function () {
   'use strict';
+
+  console.log("🚀 Chat.js initializing...");
 
   function $(sel, ctx = document) { return ctx.querySelector(sel); }
   function $all(sel, ctx = document) { return Array.from(ctx.querySelectorAll(sel)); }
@@ -44,11 +55,17 @@ function toggleAudio(audioId, fileUrl) {
   }
 
   const container = document.querySelector('.chat-container');
-  if (!container) return;
+  if (!container) {
+    console.error("❌ No .chat-container found!");
+    return;
+  }
 
   let room = container.dataset.room || '';
+  console.log("📍 Room:", room);
+  
   const messagesContainer = $('#messagesContainer');
   const CURRENT_USER = window.CURRENT_USER || null;
+  console.log("👤 Current user:", CURRENT_USER);
 
   let socket = null;
   let selectMode = false;
@@ -71,9 +88,11 @@ function toggleAudio(audioId, fileUrl) {
   // ==================== SOCKET INITIALIZATION ====================
   function initSocket() {
     if (typeof io === "undefined") {
-      console.error("Socket.IO not loaded!");
+      console.error("❌ Socket.IO not loaded!");
       return;
     }
+
+    console.log("🔌 Initializing Socket.IO connection...");
 
     socket = io(window.location.origin, {
       transports: ["websocket", "polling"],
@@ -81,8 +100,10 @@ function toggleAudio(audioId, fileUrl) {
     });
 
     socket.on("connect", () => {
-      console.log("✅ Socket connected");
+      console.log("✅ Socket connected! Socket ID:", socket.id);
       socket.emit("join_room", { room });
+      console.log("📤 Sent join_room event for:", room);
+      
       const statusEl = $("#status");
       if (statusEl) statusEl.textContent = "Connected";
     });
@@ -99,22 +120,25 @@ function toggleAudio(audioId, fileUrl) {
     });
 
     socket.on("new_message", (msg) => {
-      console.log("📩 New message received:", msg);
+      console.log("📩 NEW MESSAGE RECEIVED:", JSON.stringify(msg, null, 2));
       appendMessageToDOM(msg);
       scrollToBottom();
     });
 
     socket.on("message_edited", d => {
+      console.log("✏️ Message edited:", d);
       const el = document.querySelector(`.message[data-msg-id="${d.message_id}"] .msg-text`);
       if (el) el.textContent = d.new_text;
     });
 
     socket.on("message_deleted", d => {
+      console.log("🗑️ Message deleted:", d);
       const node = document.querySelector(`.message[data-msg-id="${d.message_id}"]`);
       if (node) node.remove();
     });
 
     socket.on("messages_deleted", d => {
+      console.log("🗑️ Multiple messages deleted:", d);
       (d.message_ids || []).forEach(id => {
         const node = document.querySelector(`.message[data-msg-id="${id}"]`);
         if (node) node.remove();
@@ -122,11 +146,17 @@ function toggleAudio(audioId, fileUrl) {
     });
 
     socket.on("chat_cleared", () => {
+      console.log("🧹 Chat cleared");
       $all(".message").forEach(m => m.remove());
     });
 
     socket.on("unread_update", data => {
-      console.log("Unread update:", data);
+      console.log("📬 Unread update:", data);
+    });
+
+    // Log ALL socket events for debugging
+    socket.onAny((eventName, ...args) => {
+      console.log(`🔔 Socket event: ${eventName}`, args);
     });
   }
 
@@ -138,10 +168,15 @@ function toggleAudio(audioId, fileUrl) {
     try {
       const d = ts ? new Date(ts) : new Date();
       return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch (e) { return ''; }
+    } catch (e) { 
+      console.error("Time format error:", e);
+      return ''; 
+    }
   }
 
   function appendMessageToDOM(data) {
+    console.log("➕ Appending message to DOM:", data);
+    
     const id = data._id || "m" + Date.now();
     const wrapper = document.createElement("div");
 
@@ -152,6 +187,7 @@ function toggleAudio(audioId, fileUrl) {
     const ts = formatTime(data.timestamp);
 
     if (data.message_type === "file" && data.file_info) {
+      console.log("📎 Rendering file message");
       if (data.file_info.file_type === "image" || data.file_info.file_type?.startsWith("image")) {
         contentHtml = `<div class="image-message"><img src="${data.file_info.file_path || data.file_info.file_url}" style="max-width:100%;border-radius:8px;"></div>`;
       } else {
@@ -159,6 +195,7 @@ function toggleAudio(audioId, fileUrl) {
       }
     }
     else if (data.message_type === "voice" && data.voice_info) {
+      console.log("🎤 Rendering voice message");
       const voicePath = data.voice_info.file_path || data.voice_info.file_url;
       const duration = data.voice_info.duration || 0;
       contentHtml = `
@@ -170,6 +207,7 @@ function toggleAudio(audioId, fileUrl) {
         </div>`;
     }
     else {
+      console.log("💬 Rendering text message");
       contentHtml = `<div class="msg-text">${escapeHtml(data.text)}</div>`;
     }
 
@@ -199,6 +237,7 @@ function toggleAudio(audioId, fileUrl) {
       </div>`;
 
     messagesContainer.appendChild(wrapper);
+    console.log("✅ Message appended to DOM");
   }
 
   function closeAllDropdowns() {
@@ -360,6 +399,8 @@ function toggleAudio(audioId, fileUrl) {
     const file = e.target.files[0];
     if (!file) return;
 
+    console.log("📤 Uploading file:", file.name);
+
     const fd = new FormData();
     fd.append("file", file);
     fd.append("room", room);
@@ -369,6 +410,8 @@ function toggleAudio(audioId, fileUrl) {
       .then(data => {
         if (data.success) {
           console.log("✅ File uploaded successfully");
+        } else {
+          console.error("❌ File upload failed:", data);
         }
       })
       .catch(err => console.error("Upload error:", err))
@@ -377,21 +420,36 @@ function toggleAudio(audioId, fileUrl) {
 
   function sendMessage() {
     const txt = messageInput.value.trim();
-    if (!txt || !socket) {
-      console.error("Cannot send: no text or socket not connected");
+    if (!txt) {
+      console.warn("⚠️ Cannot send empty message");
+      return;
+    }
+    
+    if (!socket || !socket.connected) {
+      console.error("❌ Socket not connected!");
+      alert("Not connected to server. Please refresh the page.");
       return;
     }
     
     console.log("📤 Sending message:", txt);
-    socket.emit("send_message", { message: txt, room });
+    console.log("📤 To room:", room);
+    console.log("📤 Socket connected:", socket.connected);
+    
+    socket.emit("send_message", { message: txt, room: room });
+    console.log("✅ Message emitted via socket");
+    
     messageInput.value = "";
   }
 
-  sendBtn.addEventListener("click", sendMessage);
+  sendBtn.addEventListener("click", () => {
+    console.log("🖱️ Send button clicked");
+    sendMessage();
+  });
   
   messageInput.addEventListener("keydown", e => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
+      console.log("⌨️ Enter key pressed");
       sendMessage();
     }
   });
@@ -448,19 +506,28 @@ function toggleAudio(audioId, fileUrl) {
   let isRecording = false;
 
   voiceBtn.addEventListener("click", async () => {
+    console.log("🎤 Voice button clicked, isRecording:", isRecording);
+    
     if (!isRecording) {
       try {
+        console.log("🎤 Requesting microphone access...");
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log("✅ Microphone access granted");
+        
         mediaRecorder = new MediaRecorder(stream);
         audioChunks = [];
 
         mediaRecorder.ondataavailable = (e) => {
+          console.log("🎤 Audio data available:", e.data.size, "bytes");
           audioChunks.push(e.data);
         };
 
         mediaRecorder.onstop = async () => {
+          console.log("🎤 Recording stopped, chunks:", audioChunks.length);
           const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
           const duration = audioChunks.length * 0.1;
+          
+          console.log("📤 Uploading voice message, size:", audioBlob.size, "duration:", duration);
           
           const formData = new FormData();
           formData.append('audio', audioBlob, 'voice.webm');
@@ -470,11 +537,14 @@ function toggleAudio(audioId, fileUrl) {
           try {
             const res = await fetch('/upload_voice', { method: 'POST', body: formData });
             const data = await res.json();
+            console.log("📥 Voice upload response:", data);
             if (data.success) {
-              console.log("✅ Voice message uploaded");
+              console.log("✅ Voice message uploaded successfully");
+            } else {
+              console.error("❌ Voice upload failed:", data);
             }
           } catch (err) {
-            console.error("Voice upload error:", err);
+            console.error("❌ Voice upload error:", err);
           }
 
           stream.getTracks().forEach(track => track.stop());
@@ -484,15 +554,18 @@ function toggleAudio(audioId, fileUrl) {
         isRecording = true;
         voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
         voiceBtn.style.background = '#ff6b6b';
+        console.log("🎤 Recording started");
       } catch (err) {
-        console.error("Microphone access error:", err);
-        alert("Could not access microphone");
+        console.error("❌ Microphone access error:", err);
+        alert("Could not access microphone: " + err.message);
       }
     } else {
+      console.log("🎤 Stopping recording...");
       mediaRecorder.stop();
       isRecording = false;
       voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
       voiceBtn.style.background = '';
+      console.log("⏹️ Recording stopped");
     }
   });
 
@@ -520,6 +593,7 @@ function toggleAudio(audioId, fileUrl) {
   }
 
   // ==================== INITIALIZATION ====================
+  console.log("🔧 Starting initialization...");
   initSocket();
   scrollToBottom();
 
@@ -530,5 +604,9 @@ function toggleAudio(audioId, fileUrl) {
   // Apply default theme
   applyTheme('light');
 
-  console.log("✅ Chat initialized");
+  console.log("✅ Chat initialized successfully!");
+  console.log("📊 Summary:");
+  console.log("  - Room:", room);
+  console.log("  - User:", CURRENT_USER);
+  console.log("  - Socket:", socket ? "Created" : "Failed");
 })();
