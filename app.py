@@ -3,7 +3,7 @@ import eventlet
 eventlet.monkey_patch()
 
 from flask import Flask
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
 import os
 import secrets
 import base64
@@ -946,11 +946,16 @@ def on_leave_room(data):
 @socketio.on('send_message')
 def on_send_message(data):
     if 'user' not in session:
+        print("❌ No user in session")
         return
 
     message_text = data.get('message', '').strip()
     room = data.get('room', '')
+    
+    print(f"📨 Received send_message: text='{message_text}', room='{room}'")
+    
     if not message_text or not room:
+        print("❌ Missing text or room")
         return
 
     if '@' in room:
@@ -965,21 +970,28 @@ def on_send_message(data):
         'message_type': 'text'
     }
 
+    msg_id = None
     if IS_DB_AVAILABLE:
         result = mongo.db.messages.insert_one(message_data)
-        message_data['_id'] = result.inserted_id
+        msg_id = str(result.inserted_id)
+    else:
+        msg_id = f"msg_{int(time.time() * 1000)}"
 
-    app.logger.debug(f"💬 Message from {session['user']['username']} in {room}: {message_text[:50]}...")
-    emit('new_message', {
-    '_id': str(message_data['_id']) if '_id' in message_data else None,
-    'author_username': message_data['author_username'],
-    'text': message_data['text'],
-    'timestamp': message_data['timestamp'].isoformat(),
-    'message_type': 'text',
-    'file_info': None,
-    'voice_info': None
-    }, to=room)
-
+    print(f"💬 Emitting message to room '{room}': {message_text[:30]}...")
+    
+    # Emit the message back to everyone in the room
+    socketio.emit('new_message', {
+        '_id': msg_id,
+        'author_username': message_data['author_username'],
+        'author_email': message_data['author_email'],
+        'text': message_data['text'],
+        'timestamp': message_data['timestamp'].isoformat(),
+        'message_type': 'text',
+        'file_info': None,
+        'voice_info': None
+    }, room=room)
+    
+    print(f"✅ Message emitted successfully")
 
     if IS_DB_AVAILABLE:
         try:
@@ -1312,6 +1324,7 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
+
 
 
 
