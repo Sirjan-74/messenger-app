@@ -1,20 +1,39 @@
 // -------------------- AUDIO PLAYER FIX --------------------
 let currentAudio = null;
+let currentButton = null;
 
 function toggleAudio(audioId, fileUrl) {
     try {
         console.log("🎵 Audio clicked:", audioId, fileUrl);
         
+        const button = event?.target?.closest('.audio-play-btn');
+        
+        // If audio is playing, stop it
         if (currentAudio && !currentAudio.paused) {
             currentAudio.pause();
             currentAudio.currentTime = 0;
+            if (currentButton) {
+                currentButton.innerHTML = '<i class="fas fa-play"></i>';
+            }
             currentAudio = null;
+            currentButton = null;
             console.log("⏸️ Audio stopped");
             return;
         }
 
-        currentAudio = new Audio(fileUrl);
+        // Create new audio with crossOrigin
+        currentAudio = new Audio();
+        currentAudio.crossOrigin = "anonymous";
+        currentAudio.src = fileUrl;
+        currentButton = button;
+        
         console.log("🎵 Audio object created, attempting to play...");
+        console.log("🎵 Audio URL:", fileUrl);
+
+        // Change button to pause icon
+        if (button) {
+            button.innerHTML = '<i class="fas fa-pause"></i>';
+        }
 
         currentAudio.play()
         .then(() => {
@@ -22,17 +41,28 @@ function toggleAudio(audioId, fileUrl) {
         })
         .catch(e => {
             console.error("❌ Play error:", e);
+            if (button) {
+                button.innerHTML = '<i class="fas fa-play"></i>';
+            }
             alert("Could not play audio: " + e.message);
         });
 
         currentAudio.onended = () => {
+            console.log("🎵 Audio ended naturally");
+            if (currentButton) {
+                currentButton.innerHTML = '<i class="fas fa-play"></i>';
+            }
             currentAudio = null;
-            console.log("🎵 Audio ended");
+            currentButton = null;
         };
 
         currentAudio.onerror = (e) => {
-            console.error("❌ Audio error:", e);
-            alert("Audio loading error");
+            console.error("❌ Audio loading error:", e);
+            console.error("Audio error details:", currentAudio.error);
+            if (currentButton) {
+                currentButton.innerHTML = '<i class="fas fa-play"></i>';
+            }
+            alert("Audio loading failed. Error code: " + (currentAudio.error?.code || 'unknown'));
         };
 
     } catch (error) {
@@ -200,10 +230,10 @@ function toggleAudio(audioId, fileUrl) {
       const duration = data.voice_info.duration || 0;
       contentHtml = `
         <div class="audio-player">
-          <button class="audio-play-btn" onclick="toggleAudio('${id}','${voicePath}')" style="width:36px;height:36px;border-radius:50%;background:#667eea;color:white;border:none;cursor:pointer;">
+          <button class="audio-play-btn" onclick="toggleAudio('${id}','${voicePath}')" style="width:36px;height:36px;border-radius:50%;background:#667eea;color:white;border:none;cursor:pointer;transition:all 0.2s;">
             <i class="fas fa-play"></i>
           </button>
-          <span style="margin-left:8px;">Voice message — ${duration.toFixed(1)}s</span>
+          <span style="margin-left:8px;color:inherit;">🎤 Voice message — ${duration.toFixed(1)}s</span>
         </div>`;
     }
     else {
