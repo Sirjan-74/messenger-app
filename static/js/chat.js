@@ -9,15 +9,20 @@ function toggleAudio(audioId, fileUrl) {
             currentAudio = null;
             return;
         }
+
         currentAudio = new Audio(fileUrl);
-        currentAudio.play();
-        currentAudio.onended = () => {
-            currentAudio = null;
-        };
+
+        currentAudio.play()
+        .then(() => console.log("🎵 Playing"))
+        .catch(e => console.warn("Play interrupted:", e));
+
+        currentAudio.onended = () => currentAudio = null;
+
     } catch (error) {
-        console.error("Audio play error:", error);
+        console.error("Audio error:", error);
     }
 }
+
 
 (function () {
   'use strict';
@@ -79,6 +84,12 @@ function toggleAudio(audioId, fileUrl) {
       const statusEl = $("#status");
       if (statusEl) statusEl.textContent = "Reconnecting...";
     });
+    // ================== AUTO RECONNECT FIX ==================
+    socket.io.on("reconnect_attempt", () => {
+    console.log("🔄 Attempting reconnect...");
+    socket.emit("join_room", { room });
+    });
+
 
     socket.on("new_message", (msg) => {
     console.log("📩 New message received:", msg);
