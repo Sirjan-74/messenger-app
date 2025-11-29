@@ -698,12 +698,15 @@ def upload_file():
 
         # emit message to room
         socketio.emit('new_message', {
+            '_id': str(file_data.get("_id","")),
             'author_username': file_data['author_username'],
             'text': file_data['text'],
             'timestamp': file_data['timestamp'].isoformat(),
             'message_type': 'file',
-            'file_info': file_data['file_info']
+            'file_info': file_data['file_info'],
+            'voice_info': None
         }, room=room)
+
 
         # Update unread counts for participants
         if IS_DB_AVAILABLE:
@@ -771,13 +774,16 @@ def upload_voice_message():
             voice_data['_id'] = result.inserted_id
 
         # Emit over SocketIO
-        socketio.emit('new_message', {
-            'author_username': voice_data['author_username'],
-            'text': voice_data['text'],
-            'timestamp': voice_data['timestamp'].isoformat(),
-            'message_type': 'voice',
-            'voice_info': voice_data['voice_info']
-        }, room=room)
+        socketio.emit('new_message',{
+    '_id': str(voice_data.get("_id","")),
+    'author_username': voice_data['author_username'],
+    'text': voice_data['text'],
+    'timestamp': voice_data['timestamp'].isoformat(),
+    'message_type': 'voice',
+    'file_info': None,
+    'voice_info': voice_data['voice_info']
+}, room=room)
+
 
         # Update unread counts for participants
         if IS_DB_AVAILABLE:
@@ -965,11 +971,15 @@ def on_send_message(data):
 
     app.logger.debug(f"💬 Message from {session['user']['username']} in {room}: {message_text[:50]}...")
     emit('new_message', {
-        'author_username': message_data['author_username'],
-        'text': message_data['text'],
-        'timestamp': message_data['timestamp'].isoformat(),
-        'message_type': 'text'
+    '_id': str(message_data['_id']) if '_id' in message_data else None,
+    'author_username': message_data['author_username'],
+    'text': message_data['text'],
+    'timestamp': message_data['timestamp'].isoformat(),
+    'message_type': 'text',
+    'file_info': None,
+    'voice_info': None
     }, to=room)
+
 
     if IS_DB_AVAILABLE:
         try:
@@ -1302,7 +1312,6 @@ if __name__ == '__main__':
     except Exception:
         port = 5000
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
-
 
 
 
