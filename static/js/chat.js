@@ -80,11 +80,12 @@ function toggleAudio(audioId, fileUrl) {
       if (statusEl) statusEl.textContent = "Reconnecting...";
     });
 
-    socket.on("new_message", (data) => {
-      console.log("📩 New message received:", data);
-      appendMessageToDOM(data);
-      scrollToBottom();
-    });
+    socket.on("new_message", (msg) => {
+    console.log("📩 New message received:", msg);
+    appendMessageToDOM(msg);
+    scrollToBottom();
+});
+
 
     socket.on("message_edited", d => {
       const el = document.querySelector(`.message[data-msg-id="${d.message_id}"] .msg-text`);
