@@ -7,7 +7,7 @@
 .chat-container{
     display:flex;
     flex-direction:column;
-    height:100vh; /* FULL SCREEN */
+    height:100vh;
 }
 
 #messagesContainer{
@@ -35,6 +35,7 @@
 .theme-selector { display:flex; gap:8px; margin-left:0.5rem; align-items:center; }
 .theme-btn { width:34px; height:34px; border-radius:50%; border:2px solid rgba(255,255,255,0.6); cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,0.06); transition: transform 0.2s; }
 .theme-btn:hover { transform: scale(1.1); }
+.theme-btn.active { border: 3px solid #667eea !important; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
 
 /* color dots */
 .theme-btn.light { background: linear-gradient(135deg,#f8fafc,#e2e8f0); }
@@ -42,6 +43,49 @@
 .theme-btn.festive { background: linear-gradient(135deg,#ff7a7a,#ffef7a); }
 .theme-btn.ocean { background: linear-gradient(135deg,#06b6d4,#0369a1); }
 .theme-btn.sunset { background: linear-gradient(135deg,#fb923c,#f97316); }
+
+/* ---------- messages ---------- */
+.messages-container { flex:1; overflow-y:auto; padding:1.25rem; scroll-behavior:smooth; position:relative; }
+.message { display:flex; margin-bottom:1.25rem; position:relative; animation: slideIn 0.3s ease-out; }
+@keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.message.own { justify-content:flex-end; }
+.message-bubble { max-width: 70%; padding:1rem 1.25rem; border-radius:16px; box-shadow:0 8px 20px rgba(0,0,0,0.05); background:white; position:relative; }
+.message.own .message-bubble { background: linear-gradient(135deg,#667eea,#764ba2); color:white; }
+.message-author { font-weight:700; margin-bottom:0.35rem; font-size:0.95rem; }
+
+/* per-message actions & checkbox */
+.msg-actions { position:absolute; top:6px; right:6px; display:flex; gap:6px; align-items:center; opacity: 0.7; transition: opacity 0.2s; }
+.message:hover .msg-actions { opacity: 1; }
+.select-checkbox { width:18px; height:18px; border-radius:4px; border:1px solid #ddd; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; background:white; transition: all 0.2s; }
+.select-checkbox:hover { border-color: #667eea; }
+.select-checkbox.checked { background: #667eea; border-color:#667eea; color:white; }
+.select-checkbox.checked::after { content: '✓'; font-size: 12px; }
+.msg-menu-btn { width:30px; height:30px; border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:1px solid rgba(0,0,0,0.05); background:white; transition: all 0.2s; }
+.msg-menu-btn:hover { background: #f3f4f6; }
+
+/* dropdown */
+.dropdown { position: absolute; top:34px; right:6px; background:white; border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,0.12); padding:6px; display:none; z-index:40; min-width: 180px; }
+.dropdown.show { display:block; animation: fadeIn 0.2s; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+.dropdown button { display:block; width:100%; padding:8px 12px; text-align:left; background:transparent; border:none; cursor:pointer; border-radius: 6px; transition: background 0.2s; }
+.dropdown button:hover { background: #f3f4f6; }
+
+/* message timestamp */
+.msg-ts { font-size:0.75rem; opacity:0.7; margin-top:0.5rem; }
+
+/* bottom input */
+.input-area { padding:1rem 1.25rem; border-top:1px solid #eee; display:flex; gap:0.75rem; align-items:center; background:rgba(255,255,255,0.98); }
+.message-input { flex:1; padding:0.9rem 1rem; border-radius:999px; border:1px solid #e6e6e6; outline:none; font-size:1rem; resize:none; background:#fbfbfd; transition: border 0.2s; }
+.message-input:focus { border-color: #667eea; }
+.action-btn { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; transition: all 0.2s; }
+.action-btn:hover { transform: scale(1.05); }
+
+/* edit modal */
+.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:1000; }
+.modal-backdrop.show { display:flex; animation: fadeIn 0.2s; }
+.modal { background:white; padding:1.5rem; border-radius:12px; min-width:320px; max-width: 500px; box-shadow:0 20px 50px rgba(0,0,0,0.25); }
+
+/* ==================== THEME SYSTEM ==================== */
 
 /* Light Theme (Default) */
 .chat-container.light {
@@ -108,8 +152,7 @@
     --header-bg: rgba(255, 247, 237, 0.98);
 }
 
-/* ==================== APPLY THEME VARIABLES ==================== */
-
+/* Apply Theme Variables */
 .chat-container {
     background: var(--bg-primary);
     transition: all 0.3s ease;
@@ -136,7 +179,6 @@
 .message-bubble {
     background: var(--message-bg) !important;
     color: var(--text-primary);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .message.own .message-bubble {
@@ -171,24 +213,15 @@
     color: var(--text-primary);
 }
 
-.message-input::placeholder {
-    color: var(--text-secondary);
-}
-
 .top-btn {
     background: var(--bg-secondary) !important;
     border: 1px solid var(--border-color) !important;
     color: var(--text-primary);
 }
 
-.top-btn.ghost {
-    background: transparent !important;
-}
-
 .dropdown {
     background: var(--bg-secondary) !important;
     color: var(--text-primary);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
 }
 
 .dropdown button {
@@ -205,86 +238,10 @@
     color: var(--text-primary);
 }
 
-.msg-menu-btn:hover {
-    background: var(--bg-primary) !important;
-}
-
-.select-checkbox {
-    background: var(--bg-secondary) !important;
-    border: 1px solid var(--border-color) !important;
-}
-
 .modal {
     background: var(--bg-secondary) !important;
     color: var(--text-primary);
 }
-
-.modal textarea {
-    background: var(--input-bg) !important;
-    border: 1px solid var(--border-color) !important;
-    color: var(--text-primary);
-}
-
-/* Dark theme specific adjustments */
-.chat-container.dark .back-btn {
-    background: linear-gradient(135deg, #8b5cf6, #ec4899);
-}
-
-.chat-container.dark .action-btn {
-    opacity: 0.9;
-}
-
-.chat-container.dark .top-btn.delete {
-    background: #ef4444 !important;
-}
-
-/* Theme button active state */
-.theme-btn.active {
-    border: 3px solid #667eea;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-}
-
-
-/* ---------- messages ---------- */
-.messages-container { flex:1; overflow-y:auto; padding:1.25rem; scroll-behavior:smooth; position:relative; }
-.message { display:flex; margin-bottom:1.25rem; position:relative; animation: slideIn 0.3s ease-out; }
-@keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.message.own { justify-content:flex-end; }
-.message-bubble { max-width: 70%; padding:1rem 1.25rem; border-radius:16px; box-shadow:0 8px 20px rgba(0,0,0,0.05); background:white; position:relative; }
-.message.own .message-bubble { background: linear-gradient(135deg,#667eea,#764ba2); color:white; }
-.message-author { font-weight:700; margin-bottom:0.35rem; font-size:0.95rem; }
-
-/* per-message actions & checkbox */
-.msg-actions { position:absolute; top:6px; right:6px; display:flex; gap:6px; align-items:center; opacity: 0.7; transition: opacity 0.2s; }
-.message:hover .msg-actions { opacity: 1; }
-.select-checkbox { width:18px; height:18px; border-radius:4px; border:1px solid #ddd; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; background:white; transition: all 0.2s; }
-.select-checkbox:hover { border-color: #667eea; }
-.select-checkbox.checked { background: #667eea; border-color:#667eea; color:white; }
-.select-checkbox.checked::after { content: '✓'; font-size: 12px; }
-.msg-menu-btn { width:30px; height:30px; border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:1px solid rgba(0,0,0,0.05); background:white; transition: all 0.2s; }
-.msg-menu-btn:hover { background: #f3f4f6; }
-
-/* dropdown */
-.dropdown { position: absolute; top:34px; right:6px; background:white; border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,0.12); padding:6px; display:none; z-index:40; min-width: 180px; }
-.dropdown.show { display:block; animation: fadeIn 0.2s; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-.dropdown button { display:block; width:100%; padding:8px 12px; text-align:left; background:transparent; border:none; cursor:pointer; border-radius: 6px; transition: background 0.2s; }
-.dropdown button:hover { background: #f3f4f6; }
-
-/* message timestamp */
-.msg-ts { font-size:0.75rem; opacity:0.7; margin-top:0.5rem; }
-
-/* bottom input */
-.input-area { padding:1rem 1.25rem; border-top:1px solid #eee; display:flex; gap:0.75rem; align-items:center; background:rgba(255,255,255,0.98); }
-.message-input { flex:1; padding:0.9rem 1rem; border-radius:999px; border:1px solid #e6e6e6; outline:none; font-size:1rem; resize:none; background:#fbfbfd; transition: border 0.2s; }
-.message-input:focus { border-color: #667eea; }
-.action-btn { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; transition: all 0.2s; }
-.action-btn:hover { transform: scale(1.05); }
-
-/* edit modal */
-.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:1000; }
-.modal-backdrop.show { display:flex; animation: fadeIn 0.2s; }
-.modal { background:white; padding:1.5rem; border-radius:12px; min-width:320px; max-width: 500px; box-shadow:0 20px 50px rgba(0,0,0,0.25); }
 
 /* responsiveness */
 @media (max-width:900px) {
@@ -296,7 +253,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="chat-container" data-room="{{ room }}">
+<div class="chat-container light" data-room="{{ room }}">
   <div class="chat-header">
     <div class="header-left">
       <a class="back-btn" href="{{ url_for('dashboard') }}"><i class="fas fa-arrow-left"></i></a>
@@ -313,7 +270,7 @@
       <button id="clearChatBtn" class="top-btn ghost">Clear Chat</button>
 
       <div class="theme-selector" title="Choose theme">
-        <div class="theme-btn light" data-theme="light" title="Light"></div>
+        <div class="theme-btn light active" data-theme="light" title="Light"></div>
         <div class="theme-btn dark" data-theme="dark" title="Dark"></div>
         <div class="theme-btn festive" data-theme="festive" title="Festive"></div>
         <div class="theme-btn ocean" data-theme="ocean" title="Ocean"></div>
@@ -331,12 +288,14 @@
             {% if msg.author_username != user.username %}
               <div class="message-author">{{ msg.author_username }}</div>
             {% endif %}
-            {% if msg.get('message_type') == 'file' and msg.file_info and msg.file_info.file_type == 'image' %}
-              <div class="image-message"><img src="{{ msg.file_info.file_url }}" style="max-width:100%; border-radius: 8px;" /></div>
+            {% if msg.get('message_type') == 'file' and msg.file_info and (msg.file_info.file_type == 'image' or msg.file_info.file_type.startswith('image')) %}
+              <div class="image-message"><img src="{{ msg.file_info.file_url or msg.file_info.file_path }}" style="max-width:100%; border-radius: 8px;" /></div>
             {% elif msg.get('message_type') == 'voice' and msg.get('voice_info') %}
               <div class="audio-player" data-audio-id="audio_{{ loop.index }}">
-                <button class="audio-play-btn" onclick="toggleAudio('audio_{{ loop.index }}','{{ msg.voice_info.file_url }}')"><i class="fas fa-play"></i></button>
-                <div style="display:inline-block; margin-left:8px;">Voice message — {{ "%.1f"|format(msg.voice_info.duration|float) }}s</div>
+                <button class="audio-play-btn" onclick="toggleAudio('audio_{{ loop.index }}','{{ msg.voice_info.file_url or msg.voice_info.file_path }}')" style="width:36px;height:36px;border-radius:50%;background:#667eea;color:white;border:none;cursor:pointer;">
+                  <i class="fas fa-play"></i>
+                </button>
+                <span style="margin-left:8px;">Voice message — {{ "%.1f"|format(msg.voice_info.duration|float) }}s</span>
               </div>
             {% else %}
               <div class="msg-text">{{ msg.text|e }}</div>
@@ -393,14 +352,4 @@
 </script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
-
 {% endblock %}
-
-
-
-
-
-
-
-
-
