@@ -25,10 +25,12 @@ function toggleAudio(audioId, fileUrl) {
         currentAudio = new Audio();
         currentAudio.crossOrigin = "anonymous";
         currentAudio.src = fileUrl;
+        currentAudio.volume = 1.0; // Set volume to maximum
         currentButton = button;
         
         console.log("🎵 Audio object created, attempting to play...");
         console.log("🎵 Audio URL:", fileUrl);
+        console.log("🔊 Audio volume:", currentAudio.volume);
 
         // Change button to pause icon
         if (button) {
@@ -229,11 +231,20 @@ function toggleAudio(audioId, fileUrl) {
       const voicePath = data.voice_info.file_path || data.voice_info.file_url;
       const duration = data.voice_info.duration || 0;
       contentHtml = `
-        <div class="audio-player">
-          <button class="audio-play-btn" onclick="toggleAudio('${id}','${voicePath}')" style="width:36px;height:36px;border-radius:50%;background:#667eea;color:white;border:none;cursor:pointer;transition:all 0.2s;">
-            <i class="fas fa-play"></i>
+        <div class="audio-player" style="display:flex;align-items:center;gap:12px;padding:8px;background:rgba(255,255,255,0.1);border-radius:12px;">
+          <button class="audio-play-btn" onclick="toggleAudio('${id}','${voicePath}')" style="width:40px;height:40px;border-radius:50%;background:#667eea;color:white;border:none;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-play" style="font-size:16px;"></i>
           </button>
-          <span style="margin-left:8px;color:inherit;">🎤 Voice message — ${duration.toFixed(1)}s</span>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;color:inherit;">
+              <i class="fas fa-microphone" style="font-size:14px;opacity:0.8;"></i>
+              <span style="font-weight:500;">Voice message</span>
+              <span style="opacity:0.7;font-size:13px;">${duration.toFixed(1)}s</span>
+            </div>
+            <div style="height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin-top:6px;">
+              <div style="height:100%;width:0%;background:#667eea;border-radius:2px;transition:width 0.1s;"></div>
+            </div>
+          </div>
         </div>`;
     }
     else {
