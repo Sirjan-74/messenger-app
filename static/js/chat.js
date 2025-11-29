@@ -3,6 +3,8 @@ let currentAudio = null;
 
 function toggleAudio(audioId, fileUrl) {
     try {
+        console.log("🎵 Audio clicked:", audioId, fileUrl);
+        
         if (currentAudio && !currentAudio.paused) {
             currentAudio.pause();
             currentAudio.currentTime = 0;
@@ -13,16 +15,22 @@ function toggleAudio(audioId, fileUrl) {
         currentAudio = new Audio(fileUrl);
 
         currentAudio.play()
-        .then(() => console.log("🎵 Playing"))
-        .catch(e => console.warn("Play interrupted:", e));
+        .then(() => console.log("🎵 Playing audio"))
+        .catch(e => {
+            console.error("Play error:", e);
+            alert("Could not play audio: " + e.message);
+        });
 
-        currentAudio.onended = () => currentAudio = null;
+        currentAudio.onended = () => {
+            currentAudio = null;
+            console.log("🎵 Audio ended");
+        };
 
     } catch (error) {
         console.error("Audio error:", error);
+        alert("Audio error: " + error.message);
     }
 }
-
 
 (function () {
   'use strict';
@@ -84,19 +92,17 @@ function toggleAudio(audioId, fileUrl) {
       const statusEl = $("#status");
       if (statusEl) statusEl.textContent = "Reconnecting...";
     });
-    // ================== AUTO RECONNECT FIX ==================
+
     socket.io.on("reconnect_attempt", () => {
-    console.log("🔄 Attempting reconnect...");
-    socket.emit("join_room", { room });
+      console.log("🔄 Attempting reconnect...");
+      socket.emit("join_room", { room });
     });
 
-
     socket.on("new_message", (msg) => {
-    console.log("📩 New message received:", msg);
-    appendMessageToDOM(msg);
-    scrollToBottom();
-});
-
+      console.log("📩 New message received:", msg);
+      appendMessageToDOM(msg);
+      scrollToBottom();
+    });
 
     socket.on("message_edited", d => {
       const el = document.querySelector(`.message[data-msg-id="${d.message_id}"] .msg-text`);
@@ -147,16 +153,20 @@ function toggleAudio(audioId, fileUrl) {
 
     if (data.message_type === "file" && data.file_info) {
       if (data.file_info.file_type === "image" || data.file_info.file_type?.startsWith("image")) {
-        contentHtml = `<div class="image-message"><img src="${data.file_info.file_path}" style="max-width:100%;border-radius:8px;"></div>`;
+        contentHtml = `<div class="image-message"><img src="${data.file_info.file_path || data.file_info.file_url}" style="max-width:100%;border-radius:8px;"></div>`;
       } else {
         contentHtml = `<div class="msg-text">📎 Shared a file</div>`;
       }
     }
     else if (data.message_type === "voice" && data.voice_info) {
+      const voicePath = data.voice_info.file_path || data.voice_info.file_url;
+      const duration = data.voice_info.duration || 0;
       contentHtml = `
         <div class="audio-player">
-          <button onclick="toggleAudio('${id}','${data.voice_info.file_path}')"><i class="fas fa-play"></i></button>
-          <span>${escapeHtml(data.text)}</span>
+          <button class="audio-play-btn" onclick="toggleAudio('${id}','${voicePath}')" style="width:36px;height:36px;border-radius:50%;background:#667eea;color:white;border:none;cursor:pointer;">
+            <i class="fas fa-play"></i>
+          </button>
+          <span style="margin-left:8px;">Voice message — ${duration.toFixed(1)}s</span>
         </div>`;
     }
     else {
@@ -358,7 +368,7 @@ function toggleAudio(audioId, fileUrl) {
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          console.log("File uploaded successfully");
+          console.log("✅ File uploaded successfully");
         }
       })
       .catch(err => console.error("Upload error:", err))
@@ -492,6 +502,10 @@ function toggleAudio(audioId, fileUrl) {
     btn.addEventListener('click', () => {
       const theme = btn.dataset.theme;
       applyTheme(theme);
+      
+      // Mark active theme
+      themeButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
     });
   });
 
@@ -512,6 +526,9 @@ function toggleAudio(audioId, fileUrl) {
   if (socket) {
     socket.emit('mark_read', { room });
   }
+
+  // Apply default theme
+  applyTheme('light');
 
   console.log("✅ Chat initialized");
 })();
